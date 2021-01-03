@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Vitali Plagov&#39;s Blog</title>
+    <link>/posts/</link>
+    <description>Vitali Plagov&#39;s Blog (Posts)</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 12 Mar 2019 21:18:54 +0200</lastBuildDate>
+    
+    <atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Load Testing With Gatling</title>
+      <link>/posts/2019-03-12-load-testing-with-gatling/</link>
+      <pubDate>Tue, 12 Mar 2019 21:18:54 +0200</pubDate>
+      
+      <guid>/posts/2019-03-12-load-testing-with-gatling/</guid>
+      <description>&lt;p&gt;In the
+&lt;a href=&#34;https://plagov.github.io/2018/09/13/running-multiple-parallel-requests-with-restassured-and-testng.html&#34;&gt;previous blog post&lt;/a&gt;,
+I&amp;rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
+multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
+suitable tool for such kind of task.&lt;/p&gt;
+&lt;h1 id=&#34;about-gatling&#34;&gt;About Gatling&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://gatling.io/&#34;&gt;Gatling&lt;/a&gt; is an open-source tool that allows you to make load testing of web applications. It
+provides a flexible DSL that makes possible to emulate real production user scenarios. For example, consider the
+following scenario: 100 users are sending requests to the service for 3 minutes, then the number of users decreases
+and stays for the next 2 minutes and then again increases for 5 minutes. The load that users put on the service is
+not constant, it is floating. This is a very common scenario, there are peaks and lows. Thus, just throwing a fixed
+number of requests to the service at the same time during a certain period of time - this is not how real production
+scenario looks like.&lt;/p&gt;
+&lt;p&gt;Gatling runs on JVM and is written in Scala. But there&amp;rsquo;s no need in Scala programming experience to write tests. The
+DSL that Gatling provides is self-expressive.&lt;/p&gt;
+&lt;h1 id=&#34;initialize-project-with-gatling-and-maven&#34;&gt;Initialize project with Gatling and Maven&lt;/h1&gt;
+&lt;p&gt;Gatling has good integration with build tools like SBT and Maven. Though SBT is a popular choice for Scala, I have
+more experience with Maven and since there&amp;rsquo;s a plugin developed by Gatling developers, I decided to go with the tool
+which I know better.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s create a new Maven project. To add Gatling to the project, add the following dependency:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;dependency&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;io.gatling.highcharts&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;gatling-charts-highcharts&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;3.5.0&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/dependency&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Since we&amp;rsquo;re using Maven, a &lt;code&gt;gatling-maven-plugin&lt;/code&gt; should be added. Put this block inside the &lt;code&gt;build&lt;/code&gt; section of
+&lt;code&gt;pom.xml&lt;/code&gt; file.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;io.gatling&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;gatling-maven-plugin&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;3.1.1&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And the final thing, to be able to run Scala with Maven, add &lt;code&gt;scala-maven-plugin&lt;/code&gt; plugin.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;net.alchim31.maven&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;scala-maven-plugin&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;4.4.0&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;define-service-under-test-and-testing-scenario&#34;&gt;Define service under test and testing scenario&lt;/h1&gt;
+&lt;p&gt;Now, when all needed dependencies are set up. Next, we need to define the testing scenario.&lt;/p&gt;
+&lt;p&gt;For this demo, I will use one of the endpoints provided by &lt;a href=&#34;https://docs.postman-echo.com/&#34;&gt;Postman Echo&lt;/a&gt; service
+which is a free service that provides HTTP access for testing and demo purposes.&lt;/p&gt;
+&lt;p&gt;The scenario that we&amp;rsquo;re going to emulate will be as follows: during the period of 2 minutes, we will send 200
+requests that will be distributed evenly during that period, next we will increase the load to 300 users during one
+minute and finally will finish the scenario with 200 users during one minute. And we will set an assert that the
+response time of each request should be no more than 800 ms and the status code of the response should be equal to
+&lt;code&gt;200 OK&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;This scenario is used just for demo purposes. In a real project, before starting to automate the scenario, analyze
+the potential load that is expected on your service and find out what scenario will suit your case.&lt;/p&gt;
+&lt;p&gt;Create a class and make this class to extend the Gatling&amp;rsquo;s &lt;code&gt;Simulation&lt;/code&gt; class.
+That is mandatory for all classes that are expected to run the scenario.&lt;/p&gt;
+&lt;p&gt;Next, define some constants, like the base URL, query parameters and protocol
+configuration.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; url &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://postman-echo.com/get&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; queryParams &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;foo1&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bar1&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;foo2&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bar2&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; httpConfBuilder&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;HttpProtocolBuilder&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  http
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;baseUrl&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;acceptHeader&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;application/json&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After some constants are set up, next define the scenario itself that will
+represent the actual business logic. Define here all the query and path params
+that are accepted by the service, request body and asserts (for response time,
+for example).&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; sendGetRequest &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; scenario&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Get date from endpoint&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;exec&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;http&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GET method&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;get&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;queryParamMap&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;queryParams&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;check&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;status is &lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; responseTimeInMillis lte &lt;span style=&#34;color:#ae81ff&#34;&gt;800&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this example, I&amp;rsquo;m sending a GET request to the particular endpoint of the
+service (root in the example below). Define your custom name for the whole
+scenario in &lt;code&gt;scenario&lt;/code&gt; method, next, set the name of the particular request in
+&lt;code&gt;exec&lt;/code&gt; method and all the configuration of the request. Since the business logic
+of a real project might assume sending different type of requests to different
+endpoints with different asserts, it is possible to chain multiple requests
+inside the one scenario.&lt;/p&gt;
+&lt;p&gt;Next, after scenario is defined, the set up should be done. The set up of the
+scenario is the actual logic of how many request should be sent, how much time
+the scenario should be executed, how the user load should be spread during the
+execution. All of that is done using the &lt;code&gt;setUp&lt;/code&gt; method.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;setUp&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;sendGetRequest&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;inject&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+  rampUsers&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; during&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt; minutes&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt;
+  rampUsers&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;300&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; during &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt; minutes&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt;
+  rampUsers&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; during&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; minutes&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;)).&lt;/span&gt;protocols&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;httpConfBuilder&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;url&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Pass the scenario name as a method argument and define the load logic inside the
+&lt;code&gt;inject&lt;/code&gt; method. When finish with defining the load logic, set the HTTP
+configration to be used during the execution.&lt;/p&gt;
+&lt;p&gt;That&amp;rsquo;s it with the basic GET request with Gaatling. Run the following command
+to start the scenario execution.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;mvn gatling:test
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Upon the finish, Gatling will generate the HTML report with statistics and
+graphics under &lt;code&gt;target/gatling/${class_name}-${timestamp_of_execution}&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;parameterized-scenarios-with-post-request&#34;&gt;Parameterized scenarios with POST request&lt;/h1&gt;
+&lt;p&gt;In the previous section, I&amp;rsquo;ve described the simple scenario with the GET
+request. In this section I&amp;rsquo;m going to describe the scenario for the
+parameterized POST request.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s first define a service under test and HTTP configuration. As an endpoint
+I will use another service from Postman.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; url &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://postman-echo.com/post&amp;#34;&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; httpConfBuilder&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;HttpProtocolBuilder&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  http
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;baseUrl&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;acceptHeader&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;application/json&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;I have a CSV file with a column that contains random ID numbers that will be
+used as a parameter to a test scenario. Gatling has a &lt;code&gt;feeder&lt;/code&gt; feature that
+feeds the test scenario with values from a defined feeder. There are available
+several built-in feeders, check
+&lt;a href=&#34;https://gatling.io/docs/3.0/session/feeder/&#34;&gt;official documentation&lt;/a&gt; for more
+details.&lt;/p&gt;
+&lt;p&gt;To define a feeder for the CSV file, just use a &lt;code&gt;csv&lt;/code&gt; method from Gatling core
+and provide a filename, located under &lt;code&gt;src/main/resources&lt;/code&gt; or
+&lt;code&gt;src/test/resources&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; feeder &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; csv&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;random_strigs.csv&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Given the CSV file has a column header, then we can refer to this header to
+use values from this column. In the next example, I will use values from a CSV
+file to insert them into the query parameter map. Each request will be sent
+with its own value taken from the feeder.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; sendPostRequest &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; scenario&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Send POST request to endpoint&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;feed&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;feeder&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;exec&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+    http&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;POST method&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;post&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;url&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;queryParamMap&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;${id}&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;check&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;status is &lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; responseTimeInMillis lte &lt;span style=&#34;color:#ae81ff&#34;&gt;800&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;&amp;quot;${id}&amp;quot;&lt;/code&gt; in the query map points to the column header in CSV file. That will
+take a value from the feeder and compose a URL of the following format:
+&lt;code&gt;/post?id=781f5efc84&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;As in the previous example, we will check for status code 200 and that the
+response time will be less than or equal to 800 ms.&lt;/p&gt;
+&lt;p&gt;And the set up of the scenario will be the same as with the GET method test.&lt;/p&gt;
+&lt;p&gt;Run &lt;code&gt;mvn gatling:test&lt;/code&gt; command and observe result upon completion.&lt;/p&gt;
+&lt;h1 id=&#34;run-multiple-scenarios-within-one-project&#34;&gt;Run multiple scenarios within one project&lt;/h1&gt;
+&lt;p&gt;It is very often when you have multiple scenarios within the same project and
+you want them to be executed one-by-one on a CI server. By default, Gatling
+doesn&amp;rsquo;t allow more than one &lt;code&gt;setUp&lt;/code&gt; method per project. But that is configurable
+in &lt;code&gt;gatling-maven-plugin&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Add the following configuration to the maven plugin:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;runMultipleSimulations&amp;gt;&lt;/span&gt;true&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/runMultipleSimulations&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run the &lt;code&gt;mvn gatling:test&lt;/code&gt; command. That will execute all tests in the
+project sorted by alphabetic order.&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;In this blog post, I showed how quickly and easily you can create your first
+test for a load testing with Gatling.&lt;/p&gt;
+&lt;p&gt;All code examples for this blog post can be found over on
+&lt;a href=&#34;https://github.com/plagov/gatling-blogpost-demo&#34;&gt;GitHub&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Running Multiple Parallel Requests With RestAssured and TestNG</title>
+      <link>/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/</link>
+      <pubDate>Thu, 13 Sep 2018 21:13:42 +0200</pubDate>
+      
+      <guid>/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/</guid>
+      <description>&lt;p&gt;RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
+measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
+send multiple parallel requests with RestAssured and a data provider from TestNG.&lt;/p&gt;
+&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;Consider the following scenario. You have to execute the same test method with multiple test data values against a
+REST API endpoint. Moreover, you have to run all of them in parallel at the same time. A real-world scenario could be
+to check how a service under test will respond to multiple requests sent simultaneously, to test the response time,
+for example.&lt;/p&gt;
+&lt;p&gt;For REST API testing, a common tool in Java world is the &lt;a href=&#34;http://rest-assured.io/&#34;&gt;RestAssured&lt;/a&gt; library. I assume
+that you have already some experience with this library (if not, check its
+&lt;a href=&#34;https://github.com/rest-assured/rest-assured/wiki/GettingStarted&#34;&gt;getting started&lt;/a&gt; guide and
+&lt;a href=&#34;https://github.com/rest-assured/rest-assured/wiki/Usage&#34;&gt;documentation&lt;/a&gt;), so let&amp;rsquo;s set up first request specification.&lt;/p&gt;
+&lt;h2 id=&#34;restassured-specification-configuration&#34;&gt;RestAssured specification configuration&lt;/h2&gt;
+&lt;p&gt;In this presentation I will solve the following task: having a list of certain codes/IDs, I need to send the same
+POST request towards a service endpoint each with its code/ID from the list.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s first set up RestAssured specification configuration. I want to reuse the same configuration for all test
+methods in my class, so I&amp;rsquo;ll define first the specification as a class field and will put the builder configuration
+in &lt;code&gt;@BeforeMethod&lt;/code&gt; of TestNG.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;RequestSpecification specification&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+&lt;span style=&#34;color:#a6e22e&#34;&gt;@BeforeMethod&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;setUpSpecification&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(){&lt;/span&gt;
+  RequestSpecBuilder builder &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; RequestSpecBuilder&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+  builder&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;addQueryParam&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;parameterName&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; parameterValue&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;// define common parameters
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  builder&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;setContentType&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ContentType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;JSON&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+  specification &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; builder&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;build&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;So, each of the tests in my test class will reuse the same specification.&lt;/p&gt;
+&lt;h2 id=&#34;using-testng-dataprovider&#34;&gt;Using TestNG DataProvider&lt;/h2&gt;
+&lt;p&gt;Since the task assumes that I will use the same test method with different data values, TestNG DataProvider feature
+will help to make this easy to set up without code duplication. What &lt;code&gt;DataProvider&lt;/code&gt; is - it is a method that supplies
+test method with its values one by one so that test will continue to execute as long as &lt;code&gt;DataProvider&lt;/code&gt; will continue
+to supply its values. You can hard code values in &lt;code&gt;DataProvider&lt;/code&gt; method, or you can define an implementation of
+getting test values from another source (file, database or, another method or class).
+&lt;code&gt;DataProvider&lt;/code&gt; method should return an array of type &lt;code&gt;Object&lt;/code&gt;, either a one-dimensional or multi-dimensional.&lt;/p&gt;
+&lt;p&gt;For simplicity, I will use a one-dimensional array with hard-coded test values.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;@DataProvider&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;parallel &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;getId&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KD3856&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;DK8937&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;EF7301&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;};&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;@DataProvider&lt;/code&gt; annotation accepts several arguments as configurations. One of them is for example &lt;code&gt;name&lt;/code&gt; which will
+set a custom name for your DataProvider. If this argument is omitted, the method&amp;rsquo;s name will be taken as a name.&lt;/p&gt;
+&lt;p&gt;Another argument is boolean &lt;code&gt;parallel&lt;/code&gt;, which is set to &lt;code&gt;false&lt;/code&gt; by default. Here&amp;rsquo;s what happens when you set the
+value for this argument to &lt;code&gt;true&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;DataProvider will supply its test data values to test method in parallel, each in its own thread. Thus, the test
+method will be executed also in parallel, which will significantly improve the overall test execution time. If we
+would leave the default value for the &lt;code&gt;parallel&lt;/code&gt; argument, then the test will be executed one by one.&lt;/p&gt;
+&lt;h2 id=&#34;set-up-a-test-method&#34;&gt;Set up a test method&lt;/h2&gt;
+&lt;p&gt;Once DataProvider is set up, now it&amp;rsquo;s time to set up test method and connect it to a DataProvider. Here&amp;rsquo;s the whole
+test method that sends a POST request.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;@Test&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;dataProvider &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;getId&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+ &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;responseTimeOfEndpoint&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String id&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+   Map&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; map &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; HashMap&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+   map&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;put&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; id&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+
+  given&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;spec&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;specification&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;body&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;map&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;when&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;all&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;post&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ENDPOINT_ADDRESS&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;then&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;time&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;lessThan&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;2000L&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;and&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;statusCode&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;200&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Let&amp;rsquo;s describe this test method in detail.&lt;/p&gt;
+&lt;p&gt;TestNG &lt;code&gt;@Test&lt;/code&gt; annotation accepts argument &lt;code&gt;dataProvider&lt;/code&gt; that points to a name of a DataProvider that we want to
+use. We set DataProvider&amp;rsquo;s method name since we didn&amp;rsquo;t specify a custom name for a DataProvider.&lt;/p&gt;
+&lt;p&gt;In order for the test method to get a test value from a DataProvider, test method should accept arguments of the same
+type as DataProvider&amp;rsquo;s test value is. In our example, DataProvider returns an array of strings. Thus, the test method
+should accept an argument of a String type. If we would have a multi-dimensional String array in DataProvider, then
+the test method would accept two String arguments.&lt;/p&gt;
+&lt;p&gt;When we need to use the test data value, then we use this argument variable. So we did in &lt;code&gt;map.put(&amp;quot;id&amp;quot;, id);&lt;/code&gt;
+expression when creating a body for a POST request.&lt;/p&gt;
+&lt;p&gt;Next goes a pretty common RestAssured DSL for a POST method that asserts that a response is received within 2 seconds
+and its status is 200 OK.&lt;/p&gt;
+&lt;h2 id=&#34;set-up-a-number-of-threads-for-a-dataprovider&#34;&gt;Set up a number of threads for a DataProvider&lt;/h2&gt;
+&lt;p&gt;When you set a &lt;code&gt;parallel&lt;/code&gt; argument of &lt;code&gt;@DataProvider&lt;/code&gt; annotation to &lt;code&gt;true&lt;/code&gt; you also need to specify the number of
+parallel threads to be open.&lt;/p&gt;
+&lt;p&gt;That is done in two ways:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;as a command line argument passed to Maven&lt;/li&gt;
+&lt;li&gt;as a configuration of Maven Surefire Plugin&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Let&amp;rsquo;s describe both options.&lt;/p&gt;
+&lt;h3 id=&#34;number-of-parallel-threads-passed-as-a-command-line-argument&#34;&gt;Number of parallel threads passed as a command line argument&lt;/h3&gt;
+&lt;p&gt;Just include the following parameter in your Maven command with the number of threads you need to open:
+&lt;code&gt;-Ddataproviderthreadcount=30&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;To run tests within IntelliJ IDEA, use the same syntax in &amp;ldquo;VM options&amp;rdquo; field of TestNG Run Configuration.&lt;/p&gt;
+&lt;h3 id=&#34;number-of-parallel-threads-as-a-configuration-of-maven-surefire-plugin&#34;&gt;Number of parallel threads as a configuration of Maven Surefire Plugin&lt;/h3&gt;
+&lt;p&gt;Another option of setting up the number of threads is to specify this configuration in Maven Surefire Plugin if it is
+used it your project. This way you keep your configuration in &lt;code&gt;pom.xml&lt;/code&gt; and don&amp;rsquo;t add yet another argument to your
+pipeline command.&lt;/p&gt;
+&lt;p&gt;The configuration is pretty simple. Set the &lt;code&gt;dataproviderthreadcount&lt;/code&gt; in property name and number of threads in
+property value. Find below the full plugin declaration:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-surefire-plugin&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.22.0&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dataproviderthreadcount&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;30&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;In this blog post, I showed the way how you can easily set up TestNG and RestAssured to run the same test in parallel
+using a set of test data values. So this technique can be used for a sort of load testing or performance testing of
+your REST endpoints.&lt;/p&gt;
+&lt;p&gt;Just one drawback in the current implementation of parallel DataProvider execution is that you set the number of
+threads globally per project and you can&amp;rsquo;t control it per test method or per test class.&lt;/p&gt;
+&lt;p&gt;In case if the number of the test data values in DataProvider is less than the number of threads set, TestNG will
+open the number of the threads that is equal to a number of test data values available in DataProvider.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Installing SaltStack Within a Vagrant Environment</title>
+      <link>/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/</link>
+      <pubDate>Sun, 20 May 2018 21:04:50 +0200</pubDate>
+      
+      <guid>/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/</guid>
+      <description>&lt;p&gt;In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
+This can be useful to get familiar with SaltStack and try its features.&lt;/p&gt;
+&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://docs.saltstack.com/en/latest/&#34;&gt;SaltStack&lt;/a&gt; is a powerful configuration management tool that lets you automate
+provisioning and deployment of your systems and applications. It uses a master-minion paradigm where the master is
+controlling all the minions and applies certain states to minions according to the rules that you can set up.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;m assuming that you&amp;rsquo;re familiar with Vagrant. I encourage you to check out its
+&lt;a href=&#34;https://www.vagrantup.com/&#34;&gt;official website&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;initial-set-up-of-an-environment-with-vagrant&#34;&gt;Initial set-up of an environment with Vagrant&lt;/h2&gt;
+&lt;p&gt;I&amp;rsquo;m using an environment that consists of 4 virtual machines:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;master&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;web1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;web2&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;loadbalancer&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The latter three are minions. &lt;code&gt;web1&lt;/code&gt; &amp;amp; &lt;code&gt;web2&lt;/code&gt; will host and run a basic NodeJS Hello World application, while the
+&lt;code&gt;loadbalancer&lt;/code&gt; machine will balance an incoming load using Nginx.&lt;/p&gt;
+&lt;p&gt;With Vagrant you can define the configuration of each of your machines individually, but since both &lt;code&gt;web1&lt;/code&gt; and &lt;code&gt;web2&lt;/code&gt;
+are identical machines, then you can use some Ruby techniques to simplify it and describe it once.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ruby&#34; data-lang=&#34;ruby&#34;&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;..&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;NODES&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;each &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;i&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+  config&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;define &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;web&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;minion&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;box &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;BOX_IMAGE&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;network &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;private_network&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;ip&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;192.168.10.1&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;network &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;forwarded_port&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;guest&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8000&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;host&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;800&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;auto_correct&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;hostname &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;web&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;provision &lt;span style=&#34;color:#e6db74&#34;&gt;:salt&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;salt&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+      salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;minion_config &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;salt/minion-configs/web-minion&amp;#34;&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;What is interesting in this code block is the first line that defines a loop in Ruby. It loops from &lt;code&gt;1&lt;/code&gt; up to a value
+set in &lt;code&gt;NODES&lt;/code&gt; variable, that was declared previously. Thus, counter &lt;code&gt;i&lt;/code&gt; is used within a machine declaration to set
+a VM name, IP-address and exposed HTTP port. The rest that is set within a loop is a simple Vagrant configuration for
+a VM.&lt;/p&gt;
+&lt;p&gt;Another interesting code block here is: &lt;code&gt;minion.vm.provision&lt;/code&gt;. I will describe later in the post what it is used for.&lt;/p&gt;
+&lt;p&gt;The configuration of &lt;code&gt;master&lt;/code&gt; and &lt;code&gt;loadbalancer&lt;/code&gt; machines is fairly simple. You can find full Vagrantfile in my
+&lt;a href=&#34;https://github.com/plagov/vagrant-salt/blob/master/Vagrantfile&#34;&gt;GitHub repository&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;saltstack-set-up&#34;&gt;SaltStack set-up&lt;/h2&gt;
+&lt;p&gt;To set up Salt on a new machine, you can use a native package manager or use the bootstrap script provided by the
+SaltStack team with the latest stable version.&lt;/p&gt;
+&lt;h3 id=&#34;installing-saltstack-with-a-bootstrap-script&#34;&gt;Installing SaltStack with a bootstrap script&lt;/h3&gt;
+&lt;p&gt;To download the script, you will need to run the following command on a new machine.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;curl -L https://bootstrap.saltstack.com -o install_salt.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next, you will need to run the script in order to install Salt with a master or minion role. For a master you would
+run the following command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;sudo sh install_salt.sh -M -A 127.0.0.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;-M&lt;/code&gt; key in this command stands for installing a salt-master. And &lt;code&gt;-A&lt;/code&gt; configures a minion to reference to a master
+by a provided IP-address or DNS host-name.&lt;/p&gt;
+&lt;p&gt;To install Salt with a minion role you would run the following command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;sudo sh install_salt.sh -A 192.168.10.10
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You don&amp;rsquo;t provide a &lt;code&gt;-M&lt;/code&gt; key since you&amp;rsquo;re not installing the salt-master role and a value for a &lt;code&gt;-A&lt;/code&gt; key references
+to an IP-address of a salt-master that was set up a bit earlier.&lt;/p&gt;
+&lt;h3 id=&#34;installing-saltstack-with-a-vagrant-salt-provisioner&#34;&gt;Installing SaltStack with a Vagrant salt provisioner&lt;/h3&gt;
+&lt;p&gt;By reading these instructions you might think that it is not a very efficient way to configure salt on your machines.
+SSH-ing to every single machine to curl the script and run it manually is definitely not a good option.&lt;/p&gt;
+&lt;p&gt;Luckily, Vagrant has a built-in &lt;code&gt;salt&lt;/code&gt; provisioner, meaning that it provides us options to pre-configure the machine
+with either a salt-master or a salt-minion.&lt;/p&gt;
+&lt;p&gt;To install a salt-master on a Vagrant VM, provide the following instructions to a VM declaration:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ruby&#34; data-lang=&#34;ruby&#34;&gt;master&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;provision &lt;span style=&#34;color:#e6db74&#34;&gt;:salt&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;salt&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;master_config &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;salt/minion-configs/master&amp;#34;&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;install_master &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;no_minion &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;That instruction will take the file with pre-configured settings from &lt;code&gt;salt/minion-configs/master&lt;/code&gt; and will put it
+under &lt;code&gt;/srv/salt/master&lt;/code&gt; on a virtual machine, which is a default location for a salt-master configuration. Vagrant&amp;rsquo;s
+install options &lt;code&gt;install_master&lt;/code&gt; and &lt;code&gt;no_minion&lt;/code&gt; are also required for a salt-master installation.&lt;/p&gt;
+&lt;p&gt;To install a salt-minion, just a file with configurations is required:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ruby&#34; data-lang=&#34;ruby&#34;&gt;minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;provision &lt;span style=&#34;color:#e6db74&#34;&gt;:salt&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;salt&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;minion_config &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;salt/minion-configs/web-minion&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This way, instead of SSH-ing into each machine and install salt one-by-one, we specify what parameters we would like
+salt-minion to have and what are for a salt-master. The minimum configuration we have to provide to a salt-minion is
+an address of a salt-master to communicate with. It is done easily with the following configuration in &lt;code&gt;web-minion&lt;/code&gt;
+file:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-conf&#34; data-lang=&#34;conf&#34;&gt;master: 192.168.10.10
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;There are a lot of options that you can predefine for a minion. Check
+&lt;a href=&#34;https://docs.saltstack.com/en/latest/ref/configuration/minion.html&#34;&gt;official documentation&lt;/a&gt; for more information.&lt;/p&gt;
+&lt;p&gt;To install salt-master with a default configuration, you can omit a &lt;code&gt;master_config&lt;/code&gt; option and just stay with
+&lt;code&gt;install_master&lt;/code&gt; and &lt;code&gt;no_minion&lt;/code&gt;. And should you need to tune a salt-master as per your needs, you can check an
+&lt;a href=&#34;https://docs.saltstack.com/en/latest/ref/configuration/master.html&#34;&gt;extensive documentation&lt;/a&gt; on this.&lt;/p&gt;
+&lt;h2 id=&#34;summary&#34;&gt;Summary&lt;/h2&gt;
+&lt;p&gt;In this blog post, I showed an easy option on how you can install SaltStack on a virtual machine with Vagrant. Next,
+when Salt is installed, you can start to try it and get familiar with it.&lt;/p&gt;
+&lt;p&gt;To check both SaltStack and Vagrant configurations, shown in this blog post, please visit my
+&lt;a href=&#34;https://github.com/plagov/vagrant-salt&#34;&gt;GitHub repository&lt;/a&gt;.&lt;/p&gt;</description>
+    </item>
+    
+    <item>
+      <title>Welcome!</title>
+      <link>/posts/2018-05-13-introduction/</link>
+      <pubDate>Sun, 13 May 2018 00:08:14 +0200</pubDate>
+      
+      <guid>/posts/2018-05-13-introduction/</guid>
+      <description>&lt;p&gt;Welcome to my personal blog!&lt;/p&gt;
+&lt;p&gt;My name is Vitali Plagov. I&amp;rsquo;m a Test Automation Engineer.
+In this blog I&amp;rsquo;m going to write about things that are interesting for me and might be interesting and useful for you.&lt;/p&gt;
+&lt;p&gt;My profiles and contacts on different platforms:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.linkedin.com/in/plagov/&#34;&gt;LinkedIn&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.github.com/plagov/&#34;&gt;GitHub&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://stackoverflow.com/users/6934058/vitalii-plagov&#34;&gt;Stack Overflow&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://unix.stackexchange.com/users/203830/vitalii-plagov&#34;&gt;Unix &amp;amp; Linux Stack Exchange&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;vitalii.plagov@gmail.com&#34;&gt;E-mail&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
