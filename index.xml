@@ -1,15 +1,35 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Vitali Plagov&#39;s Blog</title>
+    <title>Vitali Plagov Blog</title>
     <link>/</link>
-    <description>Vitali Plagov&#39;s Blog</description>
+    <description>Vitali Plagov Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Tue, 12 Mar 2019 21:18:54 +0200</lastBuildDate>
     
     <atom:link href="/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>About</title>
+      <link>/about/</link>
+      <pubDate>Wed, 25 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>/about/</guid>
+      <description>&lt;p&gt;Hello.&lt;/p&gt;
+&lt;p&gt;My name is Vitali Plagov. This is my personal blog where I&amp;rsquo;m writing about my experience in programming and software
+development. Currently, I&amp;rsquo;m working as a Test Automation Engineer for &lt;a href=&#34;https://www.topia.com/&#34;&gt;Topia&lt;/a&gt; in Tallinn,
+Estonia.&lt;/p&gt;
+&lt;p&gt;You can find me on these social networks:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.linkedin.com/in/plagov/&#34;&gt;LinkedIn&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://stackoverflow.com/users/6934058/vitalii-plagov&#34;&gt;StackOverflow&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/plagov&#34;&gt;GitHub&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Or send me a direct email at &lt;a href=&#34;mailto:vplagov@pm.me&#34;&gt;vplagov@pm.me&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Load Testing With Gatling</title>
