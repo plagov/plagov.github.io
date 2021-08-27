@@ -2,16 +2,25 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>/posts/</loc>
+    <lastmod>2021-08-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/posts/2021-08-27-project-euler-solving-problem-8/</loc>
+    <lastmod>2021-08-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/tags/project-euler/</loc>
+    <lastmod>2021-08-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/tags/</loc>
+    <lastmod>2021-08-27T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/</loc>
+    <lastmod>2021-08-27T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>/about/</loc>
     <lastmod>2021-08-25T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/posts/2019-03-12-load-testing-with-gatling/</loc>
-    <lastmod>2019-03-12T21:18:54+02:00</lastmod>
-  </url><url>
-    <loc>/posts/</loc>
-    <lastmod>2019-03-12T21:18:54+02:00</lastmod>
-  </url><url>
-    <loc>/</loc>
     <lastmod>2019-03-12T21:18:54+02:00</lastmod>
   </url><url>
     <loc>/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/</loc>
@@ -24,7 +33,5 @@
     <lastmod>2018-05-13T00:08:14+02:00</lastmod>
   </url><url>
     <loc>/categories/</loc>
-  </url><url>
-    <loc>/tags/</loc>
   </url>
 </urlset>
