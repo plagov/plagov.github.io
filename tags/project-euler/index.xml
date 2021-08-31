@@ -17,9 +17,10 @@
       <pubDate>Fri, 27 Aug 2021 00:00:00 +0000</pubDate>
       
       <guid>/posts/2021-08-27-project-euler-solving-problem-8/</guid>
-      <description>&lt;p&gt;Project Euler is a website with hundreds of mathematical and algorithmic problems. Some time ago I started solving those
-issues using Java. My goal is to practice general programing and algorithmic skills using the latest version of Java.
-So, in this blog post, I will shortly describe the solution to problem 8.&lt;/p&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;https://projecteuler.net/&#34;&gt;Project Euler&lt;/a&gt; is a website with hundreds of mathematical and algorithmic problems.
+Some time ago I started solving those issues using Java. My goal is to practice general programing and
+algorithmic skills using the latest version of Java. So, in this blog post, I will shortly describe the solution to
+problem 8.&lt;/p&gt;
 &lt;h1 id=&#34;task&#34;&gt;Task&lt;/h1&gt;
 &lt;p&gt;There&amp;rsquo;s a series of 1000 random digits split into 20 lines.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;73167176531330624919225119674426574742355349194934
