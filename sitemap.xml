@@ -2,19 +2,28 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>/tags/design-patterns/</loc>
+    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/posts/2021-12-01-rule-engine-pattern/</loc>
+    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/tags/java/</loc>
+    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>/posts/</loc>
-    <lastmod>2021-09-20T00:00:00+00:00</lastmod>
+    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/tags/</loc>
+    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/</loc>
+    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/</loc>
     <lastmod>2021-09-20T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/project-euler/</loc>
-    <lastmod>2021-09-20T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/tags/</loc>
-    <lastmod>2021-09-20T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/</loc>
     <lastmod>2021-09-20T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/posts/2021-08-27-project-euler-solving-problem-8/</loc>
