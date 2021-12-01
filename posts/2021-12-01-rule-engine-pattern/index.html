@@ -33,7 +33,7 @@ open-source project.">
     
 
     
-        <link rel="stylesheet" href="/css/style.min.5f71db22b66f743add71d037c0bede6b7fe0074166a28a7135dc9e16d9d539c6.css" integrity="sha256-X3HbIrZvdDrdcdA3wL7ea3/gB0FmoopxNdyeFtnVOcY=">
+        <link rel="stylesheet" href="/css/style.min.40ace8d6be918b01065e879befc2cb4f0ed4f6bc905d2a2dae5a896b4b2a0496.css" integrity="sha256-QKzo1r6RiwEGXoeb78LLTw7U9ryQXSotrlqJa0sqBJY=">
     
 
 
@@ -147,7 +147,7 @@ rule engine class will hold all the rules and will find the one that matches the
 <p>To make sure that all rule classes will implement the same method, let&rsquo;s define an interface that each class will
 implement:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">AncestorRule</span> <span style="color:#f92672">{</span>
-  Optional<span style="color:#f92672">&lt;</span>AncestorResult<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">evaluate</span><span style="color:#f92672">(</span>String selector<span style="color:#f92672">);</span>
+    Optional<span style="color:#f92672">&lt;</span>AncestorResult<span style="color:#f92672">&gt;</span> <span style="color:#a6e22e">evaluate</span><span style="color:#f92672">(</span>String selector<span style="color:#f92672">);</span>
 <span style="color:#f92672">}</span>
 </code></pre></div><p>Next, let&rsquo;s define the first rule class. That class will hold the logic defined in the <code>if - else</code> branch:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AncestorWithClassRule</span> <span style="color:#66d9ef">implements</span> AncestorRule <span style="color:#f92672">{</span>
