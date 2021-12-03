@@ -3,10 +3,14 @@
   <channel>
     <title>Posts on Vitali Plagov Blog</title>
     <link>/posts/</link>
-    <description>Recent content in Posts on Vitali Plagov Blog</description>
+    <description>Vitali Plagov Blog (Posts)</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 01 Dec 2021 00:00:00 +0000</lastBuildDate><atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 01 Dec 2021 00:00:00 +0000</lastBuildDate>
+    
+    <atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
+    
+    
     <item>
       <title>How I learned about the rule engine pattern with Java</title>
       <link>/posts/2021-12-01-rule-engine-pattern/</link>
@@ -14,7 +18,119 @@
       
       <guid>/posts/2021-12-01-rule-engine-pattern/</guid>
       <description>&lt;p&gt;In this blog post, I would like to describe how I learned about the rule engine pattern while contributing to the
-open-source project.&lt;/p&gt;</description>
+open-source project.&lt;/p&gt;
+&lt;p&gt;Software developers work with 3rd party open source libraries daily. The more you use a library in your
+day-to-day work, the more familiar you become with it. In my job as a test automation engineer, I work with
+&lt;a href=&#34;https://github.com/selenide/selenide&#34;&gt;Selenide&lt;/a&gt; all the time. So, when I had to accomplish a certain task, I found
+out that Selenide doesn&amp;rsquo;t have a solution to help me with. So, I thought it could be a good opportunity to contribute
+new functionality to the open-source library.&lt;/p&gt;
+&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
+&lt;p&gt;Here&amp;rsquo;s the problem I had. The Selenide library has a function that finds an ancestor in the HTML DOM of the current
+element. The ancestor is the same HTML element, so it has different attributes the one can use to locate it on the
+page - a tag name, a class name, an attribute, an attribute with a value. So, the task is to build an XPath
+expression for each of the options.&lt;/p&gt;
+&lt;p&gt;A very straightforward solution would be to make an &lt;code&gt;if - else if - else&lt;/code&gt; statement. But with the four
+options mentioned above, that construct would look too sloppy. There must be a better and more clean approach to
+accomplishing this.&lt;/p&gt;
+&lt;h2 id=&#34;rule-engine-pattern&#34;&gt;Rule Engine pattern&lt;/h2&gt;
+&lt;p&gt;There&amp;rsquo;s indeed a better approach for such kind of problem - Rule Engine pattern.
+The essence of this pattern is to split each of &lt;code&gt;if - else if - else&lt;/code&gt; branches in its rule class. Then, the main
+rule engine class will hold all the rules and will find the one that matches the client&amp;rsquo;s request.&lt;/p&gt;
+&lt;h3 id=&#34;define-a-rule-class&#34;&gt;Define a rule class&lt;/h3&gt;
+&lt;p&gt;To make sure that all rule classes will implement the same method, let&amp;rsquo;s define an interface that each class will
+implement:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;interface&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorRule&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  Optional&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;AncestorResult&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String selector&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next, let&amp;rsquo;s define the first rule class. That class will hold the logic defined in the &lt;code&gt;if - else&lt;/code&gt; branch:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorWithClassRule&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;implements&lt;/span&gt; AncestorRule &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+
+  &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; Optional&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;AncestorResult&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String selector&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;isCssClass&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+      String xpath &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ancestor::*[contains(concat(&amp;#39; &amp;#39;, normalize-space(@class), &amp;#39; &amp;#39;), &amp;#39; %s &amp;#39;)][%s]&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt;
+        selector&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;substring&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;1&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+      &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Optional&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;of&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorResult&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;xpath&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Optional&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;empty&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;So, here&amp;rsquo;s the single logic that checks if the given selector matches the given condition - if it is a CSS class.
+The &lt;code&gt;isCssClass()&lt;/code&gt; is a function defined in the supper class (not shown here for brevity reasons). If the selector
+indeed is a CSS class, then it builds an XPath expression and returns it as an Optional of an &lt;code&gt;AncestorResult&lt;/code&gt;,
+otherwise an empty Optional.&lt;/p&gt;
+&lt;p&gt;This rule class is clean, short, easy to understand. It is written once and there&amp;rsquo;s no need to modify it often,
+unless the business logic of the rule is updated.&lt;/p&gt;
+&lt;p&gt;We define other rules the same way. Validate if the input matches the given condition, build and return a respective
+XPath expression. Otherwise, an empty result.&lt;/p&gt;
+&lt;h3 id=&#34;rule-result&#34;&gt;Rule result&lt;/h3&gt;
+&lt;p&gt;The above code has usage of the &lt;code&gt;AncestorResult&lt;/code&gt;. The purpose of this class is to wrap the result of the
+successful evaluation. This class looks as follows:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorResult&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; String value&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorResult&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String value&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; value&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; String &lt;span style=&#34;color:#a6e22e&#34;&gt;getValue&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; value&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Just one class field that we set via constructor and access it with a getter.&lt;/p&gt;
+&lt;h3 id=&#34;rule-engine-class&#34;&gt;Rule Engine class&lt;/h3&gt;
+&lt;p&gt;Now, let&amp;rsquo;s finally get to the class that holds the rule engine logic.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorRuleEngine&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; List&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;AncestorRule&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; rules &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Arrays&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;asList&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithTagRule&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithClassRule&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithAttributeRule&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithAttributeAndValueRule&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; AncestorResult &lt;span style=&#34;color:#a6e22e&#34;&gt;process&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String selector&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; rules
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;stream&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;rule &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; rule&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;flatMap&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;optional &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; optional&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Stream&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;of&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;orElseGet&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Stream&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;empty&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;findFirst&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;orElseThrow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; IllegalArgumentException&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Selector does not match any rule&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The first thing that is done in this class is a static list of all the rules that apply to this domain. If we
+have a new rule - we implement a new class and add it to this list of rules.&lt;/p&gt;
+&lt;p&gt;The second thing is the processing of the client&amp;rsquo;s input across all rules. It streams the list of rules, evaluates each
+of them. The first non-empty result of the rule is being returned to the client. Otherwise, the rule engine will
+throw an exception.&lt;/p&gt;
+&lt;p&gt;A bit about the &lt;code&gt;flatMap()&lt;/code&gt; operation. The previous &lt;code&gt;map()&lt;/code&gt; function returns a stream of Optionals. Then, the
+&lt;code&gt;flatMap()&lt;/code&gt; converts a stream of empty Optionals to an empty stream. Otherwise, to a stream of non-empty
+AncestorResults encapsulated into Optional. That construct is compatible with Java 8 and looks verbose. Luckily,
+starting with Java 9, that could be simplified. Check more in this
+&lt;a href=&#34;https://www.baeldung.com/java-filter-stream-of-optional&#34;&gt;Baeldung&lt;/a&gt; article.&lt;/p&gt;
+&lt;h3 id=&#34;usage-of-a-rule-engine&#34;&gt;Usage of a rule engine&lt;/h3&gt;
+&lt;p&gt;Now, when we have all or rules implemented, the rule engine is defined, let&amp;rsquo;s see how to call and use this engine.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ClientSideThatCallsTheRuleEngine&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;executeClientCode&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        &lt;span style=&#34;color:#75715e&#34;&gt;// some executions
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
+        AncestorRuleEngine ruleEngine &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorRuleEngine&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        String xpath &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ruleEngine&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;process&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getValue&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+        
+        &lt;span style=&#34;color:#75715e&#34;&gt;// other executions
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It is as simple as that. Instantiate a rule engine. Pass in the client&amp;rsquo;s input and get the result. It&amp;rsquo;s clean, short
+and precise. We hide all the low-level logic of validating the input, building a respective result, processing it.
+Compare it with the straightforward approach with multiple &lt;code&gt;if - else&lt;/code&gt; branches. The more logic we add, the more
+this &lt;code&gt;if - else&lt;/code&gt; monster will grow.&lt;/p&gt;
+&lt;h2 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;In this blog post, I described an example of how to implement the rule engine pattern in Java. I&amp;rsquo;m glad I learned
+about this pattern. And I&amp;rsquo;m sure that I will have more opportunities to use this pattern.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -25,7 +141,54 @@ open-source project.&lt;/p&gt;</description>
       <guid>/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/</guid>
       <description>&lt;p&gt;The &lt;a href=&#34;https://projecteuler.net/problem=9&#34;&gt;problem 9&lt;/a&gt; of the Project Euler is about a
 &lt;a href=&#34;https://en.wikipedia.org/wiki/Pythagorean_triple&#34;&gt;Pythagorean triplet&lt;/a&gt;. It&amp;rsquo;s a good problem as it gives a chance to
-practice implementing mathematical formulae with the Java code.&lt;/p&gt;</description>
+practice implementing mathematical formulae with the Java code.&lt;/p&gt;
+&lt;h1 id=&#34;task&#34;&gt;Task&lt;/h1&gt;
+&lt;p&gt;So, the problem states that there&amp;rsquo;s only one Pythagorean triple for which a sum of all its elements gives 1000.
+We need to find the product of this triplet.&lt;/p&gt;
+&lt;h1 id=&#34;solution&#34;&gt;Solution&lt;/h1&gt;
+&lt;p&gt;A Pythagorean triplet is a triplet of natural numbers that satisfies the following condition:&lt;/p&gt;
+&lt;p align=&#34;center&#34;&gt;x&lt;sup&gt;2&lt;/sup&gt; + y&lt;sup&gt;2&lt;/sup&gt; = z&lt;sup&gt;2&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;In our case, we know neither &lt;code&gt;x&lt;/code&gt;, nor the &lt;code&gt;y&lt;/code&gt;, nor the &lt;code&gt;z&lt;/code&gt;. The only condition that is known is that the sum of
+all three members is equal to 1000. The brute-force approach to find all three numbers is to start from &lt;code&gt;1&lt;/code&gt;,
+check if numbers satisfy the condition and if not, increment and repeat. This approach is not optimal at all. It
+will be doing too many unnecessary operations.&lt;/p&gt;
+&lt;p&gt;The Pythagorean triple has many features and characteristics. One among them helps to find all three elements. If we
+take two mutually prime numbers that are &lt;code&gt;u &amp;gt; v &amp;gt; 0&lt;/code&gt;, then finding &lt;code&gt;x&lt;/code&gt;, &lt;code&gt;y&lt;/code&gt; and &lt;code&gt;z&lt;/code&gt; is pretty simple:&lt;/p&gt;
+&lt;p align=&#34;center&#34;&gt;x = u&lt;sup&gt;2&lt;/sup&gt; - v&lt;sup&gt;2&lt;/sup&gt;&lt;/p&gt;
+&lt;p align=&#34;center&#34;&gt;y = 2 * u * v&lt;/p&gt;
+&lt;p align=&#34;center&#34;&gt;z = u&lt;sup&gt;2&lt;/sup&gt; + v&lt;sup&gt;2&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;With help of these formulas, it is now easier to find the triplet. We just need to find the correct pair of &lt;code&gt;u&lt;/code&gt; and &lt;code&gt;v&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;In my implementation, I decided to define the initial values of both &lt;code&gt;u&lt;/code&gt; and &lt;code&gt;v&lt;/code&gt; equal to &lt;code&gt;1&lt;/code&gt; and &lt;code&gt;2&lt;/code&gt; respectively.
+Then, calculate &lt;code&gt;x&lt;/code&gt;, &lt;code&gt;y&lt;/code&gt;, &lt;code&gt;z&lt;/code&gt; and their sum. Next, add a condition - if the sum is higher than the sum of the
+triplet from the task (1000), then increase both &lt;code&gt;u&lt;/code&gt; and &lt;code&gt;v&lt;/code&gt; by one and repeat. If the sum is lower than 1000, then
+increase just the &lt;code&gt;u&lt;/code&gt; and repeat.&lt;/p&gt;
+&lt;p&gt;This whole calculation is repeated while the sum won&amp;rsquo;t be equal to 1000. So, the whole method will look as follows:
+&lt;code&gt;x&lt;/code&gt;, &lt;code&gt;y&lt;/code&gt; and &lt;code&gt;z&lt;/code&gt; are defined as instance variables.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;long&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;productOfPythagoreanTripletWhichSumIsEqualTo&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; sumOfPythagoreanTriplet&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;long&lt;/span&gt; v &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; 1&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;long&lt;/span&gt; u &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; 2&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;sum &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; sumOfPythagoreanTriplet&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+        x &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;long&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Math&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;pow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;u&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; 2&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; Math&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;pow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;v&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; 2&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+        y &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; 2 &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; u &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; v&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+        z &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;long&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Math&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;pow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;u&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; 2&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; Math&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;pow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;v&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; 2&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
+        sum &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; x &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; y &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; z&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;sum &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; sumOfPythagoreanTriplet&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+            v&lt;span style=&#34;color:#f92672&#34;&gt;++;&lt;/span&gt;
+            u &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; v &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; 1&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+        u&lt;span style=&#34;color:#f92672&#34;&gt;++;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; x &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; y &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; z&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;When running a simple unit test, the execution time varies between 40 - 70 ms on an average Intel laptop. That looks
+pretty fast and efficient.&lt;/p&gt;
+&lt;h1 id=&#34;links&#34;&gt;Links&lt;/h1&gt;
+&lt;p&gt;Visit my &lt;a href=&#34;https://github.com/plagov/project-euler&#34;&gt;Project Euler repository&lt;/a&gt; on GitHub to see the
+&lt;a href=&#34;https://github.com/plagov/project-euler/blob/master/src/main/java/net/projecteuler/problems/Problem009.java&#34;&gt;full solution&lt;/a&gt;
+of this problem. Also, check the &lt;a href=&#34;https://github.com/plagov/project-euler/blob/master/src/test/java/net/projecteuler/problems/Problem009Test.java&#34;&gt;test&lt;/a&gt; that finds the
+product of the Pythagorean triplet as requested by the task.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -37,7 +200,87 @@ practice implementing mathematical formulae with the Java code.&lt;/p&gt;</descr
       <description>&lt;p&gt;&lt;a href=&#34;https://projecteuler.net/&#34;&gt;Project Euler&lt;/a&gt; is a website with hundreds of mathematical and algorithmic problems.
 Some time ago I started solving those issues using Java. My goal is to practice general programing and
 algorithmic skills using the latest version of Java. So, in this blog post, I will shortly describe the solution to
-problem 8.&lt;/p&gt;</description>
+problem 8.&lt;/p&gt;
+&lt;h1 id=&#34;task&#34;&gt;Task&lt;/h1&gt;
+&lt;p&gt;There&amp;rsquo;s a series of 1000 random digits split into 20 lines.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-text&#34; data-lang=&#34;text&#34;&gt;73167176531330624919225119674426574742355349194934
+96983520312774506326239578318016984801869478851843
+85861560789112949495459501737958331952853208805511
+12540698747158523863050715693290963295227443043557
+66896648950445244523161731856403098711121722383113
+62229893423380308135336276614282806444486645238749
+30358907296290491560440772390713810515859307960866
+70172427121883998797908792274921901699720888093776
+65727333001053367881220235421809751254540594752243
+52584907711670556013604839586446706324415722155397
+53697817977846174064955149290862569321978468622482
+83972241375657056057490261407972968652414535100474
+82166370484403199890008895243450658541227588666881
+16427171479924442928230863465674813919123162824586
+17866458359124566529476545682848912883142607690042
+24219022671055626321111109370544217506941658960408
+07198403850962455444362981230987879927244284909188
+84580156166097919133875499200524063689912560717606
+05886116467109405077541002256983155200055935729725
+71636269561882670428252483600823257530420752963450
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The task is to find a series of adjacent 13 digits that produce the highest product and return the value of this
+product.&lt;/p&gt;
+&lt;h1 id=&#34;solution&#34;&gt;Solution&lt;/h1&gt;
+&lt;p&gt;First, I put this sequence of digits into a txt file under &lt;code&gt;src/main/java/resources&lt;/code&gt;. Next, to read it into a
+&lt;code&gt;String&lt;/code&gt;, I wrote the following util function to read a file from resources:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; String &lt;span style=&#34;color:#a6e22e&#34;&gt;readInputFile&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String resourceFile&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;try&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    Path path &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Paths&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;get&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+      Objects&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;requireNonNull&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+        FileUtil&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;class&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getClassLoader&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getResource&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;resourceFile&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt;
+        String&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;format&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Resource %s could not be found&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; resourceFile&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;toURI&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Files&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;readString&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;path&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; StandardCharsets&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;UTF_8&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;catch&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;URISyntaxException &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt; IOException exception&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;throw&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; IllegalArgumentException&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Invalid location: &amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; resourceFile&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; exception&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next, I need to prepare the content of the file into a format that will be useful to work with. I
+need to have a list of integers. So this function will read the content of the file, join all the lines by replacing
+a new-line character with an empty string, so it will produce one string line with 1000 digits. Then, split this
+string into a list with each character as a separate element and finally transform it into a list of integers.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; List&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Integer&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;getListOfDigits&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  String string &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; FileUtil&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;readInputFile&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;problem008.txt&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;replace&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;\n&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Arrays&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;stream&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;string&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;split&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Integer&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;valueOf&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;collect&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Collectors&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;toList&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;());&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now, when I have a list of integers, I can start with problem-solving. I come up with the following algorithm.
+There will be two variables: &lt;code&gt;startIndex&lt;/code&gt; and &lt;code&gt;endIndex&lt;/code&gt;. The start will be at point zero and the end index will
+point to the index that is equal to the number of adjacent digits. For this task, this number is 13. This way, I will
+take the first 13 digits, will calculate the product of these digits and then will increase both start and end
+indices by one until the &lt;code&gt;endIndex&lt;/code&gt; is equal to the size of the whole list. Overall, this method looks as follows:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;long&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;highestProductOfAdjacentDigits&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;int&lt;/span&gt; numberOfAdjacentDigits&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  var allDigits &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; getListOfDigits&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+  var startIndex &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; 0&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+  var endIndex &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; numberOfAdjacentDigits&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+  List&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;Long&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; products &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; ArrayList&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;while&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;endIndex &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; allDigits&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;size&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;())&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+    var adjacentDigits &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; allDigits&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;subList&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;startIndex&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; endIndex&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(!&lt;/span&gt;adjacentDigits&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;contains&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+      var product &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; adjacentDigits&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;stream&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;().&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;mapToLong&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;a &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; a&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;reduce&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;1&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;a&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; b&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; a &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt; b&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+      products&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;add&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;product&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+    startIndex&lt;span style=&#34;color:#f92672&#34;&gt;++;&lt;/span&gt;
+    endIndex&lt;span style=&#34;color:#f92672&#34;&gt;++;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Collections&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;max&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;products&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To optimize the algorithm, I added a check. If the sublist of 13 digits contains zero, then it can skip the
+product calculation, since multiplying by zero will always produce zero as a result.
+Every time a product is calculated, it is stored into an array list of products and in the end, the method returns the
+max product from the list using a built-in &lt;code&gt;Collections#max&lt;/code&gt; function.&lt;/p&gt;
+&lt;p&gt;Another important thing to consider is to use a proper data type for the list of products. Multiplication of 13
+numbers may produce a massive number that won&amp;rsquo;t fit into the bounds of &lt;code&gt;int&lt;/code&gt; type. Thus, better to use a &lt;code&gt;long&lt;/code&gt; type.&lt;/p&gt;
+&lt;h1 id=&#34;links&#34;&gt;Links&lt;/h1&gt;
+&lt;p&gt;Visit my &lt;a href=&#34;https://github.com/plagov/project-euler&#34;&gt;Project Euler repository&lt;/a&gt; on GitHub to see the
+&lt;a href=&#34;https://github.com/plagov/project-euler/blob/master/src/main/java/net/projecteuler/problems/Problem008.java&#34;&gt;full solution&lt;/a&gt;
+of this problem. Also, check &lt;a href=&#34;https://github.com/plagov/project-euler/blob/master/src/test/java/net/projecteuler/problems/Problem008Test.java&#34;&gt;tests&lt;/a&gt; that assert the
+algorithm against both sample and task inputs.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -49,7 +292,155 @@ problem 8.&lt;/p&gt;</description>
       <description>&lt;p&gt;In the &lt;a href=&#34;/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/&#34;&gt;previous blog post&lt;/a&gt;
 I&amp;rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
 multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
-suitable tool for such kind of task.&lt;/p&gt;</description>
+suitable tool for such kind of task.&lt;/p&gt;
+&lt;h1 id=&#34;about-gatling&#34;&gt;About Gatling&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://gatling.io/&#34;&gt;Gatling&lt;/a&gt; is an open-source tool that allows you to make load testing of web applications. It
+provides a flexible DSL that makes possible to emulate real production user scenarios. For example, consider the
+following scenario: 100 users are sending requests to the service for 3 minutes, then the number of users decreases
+and stays for the next 2 minutes and then again increases for 5 minutes. The load that users put on the service is
+not constant, it is floating. This is a very common scenario, there are peaks and lows. Thus, just throwing a fixed
+number of requests to the service at the same time during a certain period of time - this is not how real production
+scenario looks like.&lt;/p&gt;
+&lt;p&gt;Gatling runs on JVM and is written in Scala. But there&amp;rsquo;s no need in Scala programming experience to write tests. The
+DSL that Gatling provides is self-expressive.&lt;/p&gt;
+&lt;h1 id=&#34;initialize-project-with-gatling-and-maven&#34;&gt;Initialize project with Gatling and Maven&lt;/h1&gt;
+&lt;p&gt;Gatling has good integration with build tools like SBT and Maven. Though SBT is a popular choice for Scala, I have
+more experience with Maven and since there&amp;rsquo;s a plugin developed by Gatling developers, I decided to go with the tool
+which I know better.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s create a new Maven project. To add Gatling to the project, add the following dependency:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;dependency&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;io.gatling.highcharts&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;gatling-charts-highcharts&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;3.6.1&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/dependency&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Since we&amp;rsquo;re using Maven, a &lt;code&gt;gatling-maven-plugin&lt;/code&gt; should be added. Put this block inside the &lt;code&gt;build&lt;/code&gt; section of
+&lt;code&gt;pom.xml&lt;/code&gt; file.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;io.gatling&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;gatling-maven-plugin&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;3.1.2&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And the final thing, to be able to run Scala with Maven, add &lt;code&gt;scala-maven-plugin&lt;/code&gt; plugin.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;net.alchim31.maven&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;scala-maven-plugin&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;4.5.4&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h1 id=&#34;define-service-under-test-and-testing-scenario&#34;&gt;Define service under test and testing scenario&lt;/h1&gt;
+&lt;p&gt;Now, when all needed dependencies are set up. Next, we need to define the testing scenario.&lt;/p&gt;
+&lt;p&gt;For this demo, I will use one of the endpoints provided by &lt;a href=&#34;https://docs.postman-echo.com/&#34;&gt;Postman Echo&lt;/a&gt; service
+which is a free service that provides HTTP access for testing and demo purposes.&lt;/p&gt;
+&lt;p&gt;The scenario that we&amp;rsquo;re going to emulate will be as follows: during the period of 2 minutes, we will send 200
+requests that will be distributed evenly during that period, next we will increase the load to 300 users during one
+minute and finally will finish the scenario with 200 users during one minute. And we will set an assert that the
+response time of each request should be no more than 800 ms and the status code of the response should be equal to
+&lt;code&gt;200 OK&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;This scenario is used just for demo purposes. In a real project, before starting to automate the scenario, analyze
+the potential load that is expected on your service and find out what scenario will suit your case.&lt;/p&gt;
+&lt;p&gt;Create a class and make this class to extend the Gatling&amp;rsquo;s &lt;code&gt;Simulation&lt;/code&gt; class.
+That is mandatory for all classes that are expected to run the scenario.&lt;/p&gt;
+&lt;p&gt;Next, define some constants, like the base URL, query parameters and protocol
+configuration.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; url &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://postman-echo.com/get&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; queryParams &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;foo1&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bar1&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;foo2&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;bar2&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; httpConfBuilder&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;HttpProtocolBuilder&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  http
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;baseUrl&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;acceptHeader&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;application/json&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After some constants are set up, next define the scenario itself that will
+represent the actual business logic. Define here all the query and path params
+that are accepted by the service, request body and asserts (for response time,
+for example).&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; sendGetRequest &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; scenario&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Get date from endpoint&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;exec&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;http&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;GET method&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;get&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;queryParamMap&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;queryParams&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;check&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;status is &lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; responseTimeInMillis lte &lt;span style=&#34;color:#ae81ff&#34;&gt;800&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In this example, I&amp;rsquo;m sending a GET request to the particular endpoint of the
+service (root in the example below). Define your custom name for the whole
+scenario in &lt;code&gt;scenario&lt;/code&gt; method, next, set the name of the particular request in
+&lt;code&gt;exec&lt;/code&gt; method and all the configuration of the request. Since the business logic
+of a real project might assume sending different type of requests to different
+endpoints with different asserts, it is possible to chain multiple requests
+inside the one scenario.&lt;/p&gt;
+&lt;p&gt;Next, after scenario is defined, the set up should be done. The set up of the
+scenario is the actual logic of how many request should be sent, how much time
+the scenario should be executed, how the user load should be spread during the
+execution. All of that is done using the &lt;code&gt;setUp&lt;/code&gt; method.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;setUp&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;sendGetRequest&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;inject&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+  rampUsers&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; during&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt; minutes&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt;
+  rampUsers&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;300&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; during &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt; minutes&lt;span style=&#34;color:#f92672&#34;&gt;),&lt;/span&gt;
+  rampUsers&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; during&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; minutes&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;)).&lt;/span&gt;protocols&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;httpConfBuilder&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;url&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Pass the scenario name as a method argument and define the load logic inside the
+&lt;code&gt;inject&lt;/code&gt; method. When finish with defining the load logic, set the HTTP
+configration to be used during the execution.&lt;/p&gt;
+&lt;p&gt;That&amp;rsquo;s it with the basic GET request with Gaatling. Run the following command
+to start the scenario execution.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;mvn gatling:test
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Upon the finish, Gatling will generate the HTML report with statistics and
+graphics under &lt;code&gt;target/gatling/${class_name}-${timestamp_of_execution}&lt;/code&gt;.&lt;/p&gt;
+&lt;h1 id=&#34;parameterized-scenarios-with-post-request&#34;&gt;Parameterized scenarios with POST request&lt;/h1&gt;
+&lt;p&gt;In the previous section, I&amp;rsquo;ve described the simple scenario with the GET
+request. In this section I&amp;rsquo;m going to describe the scenario for the
+parameterized POST request.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s first define a service under test and HTTP configuration. As an endpoint
+I will use another service from Postman.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; url &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https://postman-echo.com/post&amp;#34;&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; httpConfBuilder&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;String&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;HttpProtocolBuilder&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  http
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;baseUrl&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;envUrl&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;acceptHeader&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;application/json&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;I have a CSV file with a column that contains random ID numbers that will be
+used as a parameter to a test scenario. Gatling has a &lt;code&gt;feeder&lt;/code&gt; feature that
+feeds the test scenario with values from a defined feeder. There are available
+several built-in feeders, check
+&lt;a href=&#34;https://gatling.io/docs/3.0/session/feeder/&#34;&gt;official documentation&lt;/a&gt; for more
+details.&lt;/p&gt;
+&lt;p&gt;To define a feeder for the CSV file, just use a &lt;code&gt;csv&lt;/code&gt; method from Gatling core
+and provide a filename, located under &lt;code&gt;src/main/resources&lt;/code&gt; or
+&lt;code&gt;src/test/resources&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; feeder &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; csv&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;random_strigs.csv&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Given the CSV file has a column header, then we can refer to this header to
+use values from this column. In the next example, I will use values from a CSV
+file to insert them into the query parameter map. Each request will be sent
+with its own value taken from the feeder.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-scala&#34; data-lang=&#34;scala&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;val&lt;/span&gt; sendPostRequest &lt;span style=&#34;color:#66d9ef&#34;&gt;=&lt;/span&gt; scenario&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Send POST request to endpoint&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;feed&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;feeder&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;exec&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
+    http&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;POST method&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;post&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;url&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;queryParamMap&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;Map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;${id}&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;check&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;status is &lt;span style=&#34;color:#ae81ff&#34;&gt;200&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; responseTimeInMillis lte &lt;span style=&#34;color:#ae81ff&#34;&gt;800&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;&amp;quot;${id}&amp;quot;&lt;/code&gt; in the query map points to the column header in CSV file. That will
+take a value from the feeder and compose a URL of the following format:
+&lt;code&gt;/post?id=781f5efc84&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;As in the previous example, we will check for status code 200 and that the
+response time will be less than or equal to 800 ms.&lt;/p&gt;
+&lt;p&gt;And the set up of the scenario will be the same as with the GET method test.&lt;/p&gt;
+&lt;p&gt;Run &lt;code&gt;mvn gatling:test&lt;/code&gt; command and observe result upon completion.&lt;/p&gt;
+&lt;h1 id=&#34;run-multiple-scenarios-within-one-project&#34;&gt;Run multiple scenarios within one project&lt;/h1&gt;
+&lt;p&gt;It is very often when you have multiple scenarios within the same project and
+you want them to be executed one-by-one on a CI server. By default, Gatling
+doesn&amp;rsquo;t allow more than one &lt;code&gt;setUp&lt;/code&gt; method per project. But that is configurable
+in &lt;code&gt;gatling-maven-plugin&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Add the following configuration to the maven plugin:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;runMultipleSimulations&amp;gt;&lt;/span&gt;true&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/runMultipleSimulations&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Run the &lt;code&gt;mvn gatling:test&lt;/code&gt; command. That will execute all tests in the
+project sorted by alphabetic order.&lt;/p&gt;
+&lt;h1 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h1&gt;
+&lt;p&gt;In this blog post, I showed how quickly and easily you can create your first
+test for a load testing with Gatling.&lt;/p&gt;
+&lt;p&gt;All code examples for this blog post can be found over on
+&lt;a href=&#34;https://github.com/plagov/gatling-blogpost-demo&#34;&gt;GitHub&lt;/a&gt;.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -60,7 +451,122 @@ suitable tool for such kind of task.&lt;/p&gt;</description>
       <guid>/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/</guid>
       <description>&lt;p&gt;RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
 measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
-send multiple parallel requests with RestAssured and a data provider from TestNG.&lt;/p&gt;</description>
+send multiple parallel requests with RestAssured and a data provider from TestNG.&lt;/p&gt;
+&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;Consider the following scenario. You have to execute the same test method with multiple test data values against a
+REST API endpoint. Moreover, you have to run all of them in parallel at the same time. A real-world scenario could be
+to check how a service under test will respond to multiple requests sent simultaneously, to test the response time,
+for example.&lt;/p&gt;
+&lt;p&gt;For REST API testing, a common tool in Java world is the &lt;a href=&#34;http://rest-assured.io/&#34;&gt;RestAssured&lt;/a&gt; library. I assume
+that you have already some experience with this library (if not, check its
+&lt;a href=&#34;https://github.com/rest-assured/rest-assured/wiki/GettingStarted&#34;&gt;getting started&lt;/a&gt; guide and
+&lt;a href=&#34;https://github.com/rest-assured/rest-assured/wiki/Usage&#34;&gt;documentation&lt;/a&gt;), so let&amp;rsquo;s set up first request specification.&lt;/p&gt;
+&lt;h2 id=&#34;restassured-specification-configuration&#34;&gt;RestAssured specification configuration&lt;/h2&gt;
+&lt;p&gt;In this presentation I will solve the following task: having a list of certain codes/IDs, I need to send the same
+POST request towards a service endpoint each with its code/ID from the list.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s first set up RestAssured specification configuration. I want to reuse the same configuration for all test
+methods in my class, so I&amp;rsquo;ll define first the specification as a class field and will put the builder configuration
+in &lt;code&gt;@BeforeMethod&lt;/code&gt; of TestNG.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;RequestSpecification specification&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
+
+&lt;span style=&#34;color:#a6e22e&#34;&gt;@BeforeMethod&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;setUpSpecification&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(){&lt;/span&gt;
+  RequestSpecBuilder builder &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; RequestSpecBuilder&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+  builder&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;addQueryParam&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;parameterName&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; parameterValue&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;// define common parameters
+&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;  builder&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;setContentType&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ContentType&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;JSON&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+  specification &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; builder&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;build&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;So, each of the tests in my test class will reuse the same specification.&lt;/p&gt;
+&lt;h2 id=&#34;using-testng-dataprovider&#34;&gt;Using TestNG DataProvider&lt;/h2&gt;
+&lt;p&gt;Since the task assumes that I will use the same test method with different data values, TestNG DataProvider feature
+will help to make this easy to set up without code duplication. What &lt;code&gt;DataProvider&lt;/code&gt; is - it is a method that supplies
+test method with its values one by one so that test will continue to execute as long as &lt;code&gt;DataProvider&lt;/code&gt; will continue
+to supply its values. You can hard code values in &lt;code&gt;DataProvider&lt;/code&gt; method, or you can define an implementation of
+getting test values from another source (file, database or, another method or class).
+&lt;code&gt;DataProvider&lt;/code&gt; method should return an array of type &lt;code&gt;Object&lt;/code&gt;, either a one-dimensional or multi-dimensional.&lt;/p&gt;
+&lt;p&gt;For simplicity, I will use a one-dimensional array with hard-coded test values.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;@DataProvider&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;parallel &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;getId&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; Object&lt;span style=&#34;color:#f92672&#34;&gt;[]&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;KD3856&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;DK8937&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;EF7301&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;};&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;@DataProvider&lt;/code&gt; annotation accepts several arguments as configurations. One of them is for example &lt;code&gt;name&lt;/code&gt; which will
+set a custom name for your DataProvider. If this argument is omitted, the method&amp;rsquo;s name will be taken as a name.&lt;/p&gt;
+&lt;p&gt;Another argument is boolean &lt;code&gt;parallel&lt;/code&gt;, which is set to &lt;code&gt;false&lt;/code&gt; by default. Here&amp;rsquo;s what happens when you set the
+value for this argument to &lt;code&gt;true&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;DataProvider will supply its test data values to test method in parallel, each in its own thread. Thus, the test
+method will be executed also in parallel, which will significantly improve the overall test execution time. If we
+would leave the default value for the &lt;code&gt;parallel&lt;/code&gt; argument, then the test will be executed one by one.&lt;/p&gt;
+&lt;h2 id=&#34;set-up-a-test-method&#34;&gt;Set up a test method&lt;/h2&gt;
+&lt;p&gt;Once DataProvider is set up, now it&amp;rsquo;s time to set up test method and connect it to a DataProvider. Here&amp;rsquo;s the whole
+test method that sends a POST request.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;@Test&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;dataProvider &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;getId&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+ &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;responseTimeOfEndpoint&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String id&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+   Map&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;String&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; String&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; map &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; HashMap&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&amp;gt;();&lt;/span&gt;
+   map&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;put&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;id&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt; id&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+
+  given&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;spec&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;specification&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;body&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;map&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;when&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;all&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;post&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;ENDPOINT_ADDRESS&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;then&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;time&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;lessThan&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;2000L&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;and&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;statusCode&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;200&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Let&amp;rsquo;s describe this test method in detail.&lt;/p&gt;
+&lt;p&gt;TestNG &lt;code&gt;@Test&lt;/code&gt; annotation accepts argument &lt;code&gt;dataProvider&lt;/code&gt; that points to a name of a DataProvider that we want to
+use. We set DataProvider&amp;rsquo;s method name since we didn&amp;rsquo;t specify a custom name for a DataProvider.&lt;/p&gt;
+&lt;p&gt;In order for the test method to get a test value from a DataProvider, test method should accept arguments of the same
+type as DataProvider&amp;rsquo;s test value is. In our example, DataProvider returns an array of strings. Thus, the test method
+should accept an argument of a String type. If we would have a multi-dimensional String array in DataProvider, then
+the test method would accept two String arguments.&lt;/p&gt;
+&lt;p&gt;When we need to use the test data value, then we use this argument variable. So we did in &lt;code&gt;map.put(&amp;quot;id&amp;quot;, id);&lt;/code&gt;
+expression when creating a body for a POST request.&lt;/p&gt;
+&lt;p&gt;Next goes a pretty common RestAssured DSL for a POST method that asserts that a response is received within 2 seconds
+and its status is 200 OK.&lt;/p&gt;
+&lt;h2 id=&#34;set-up-a-number-of-threads-for-a-dataprovider&#34;&gt;Set up a number of threads for a DataProvider&lt;/h2&gt;
+&lt;p&gt;When you set a &lt;code&gt;parallel&lt;/code&gt; argument of &lt;code&gt;@DataProvider&lt;/code&gt; annotation to &lt;code&gt;true&lt;/code&gt; you also need to specify the number of
+parallel threads to be open.&lt;/p&gt;
+&lt;p&gt;That is done in two ways:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;as a command line argument passed to Maven&lt;/li&gt;
+&lt;li&gt;as a configuration of Maven Surefire Plugin&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Let&amp;rsquo;s describe both options.&lt;/p&gt;
+&lt;h3 id=&#34;number-of-parallel-threads-passed-as-a-command-line-argument&#34;&gt;Number of parallel threads passed as a command line argument&lt;/h3&gt;
+&lt;p&gt;Just include the following parameter in your Maven command with the number of threads you need to open:
+&lt;code&gt;-Ddataproviderthreadcount=30&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;To run tests within IntelliJ IDEA, use the same syntax in &amp;ldquo;VM options&amp;rdquo; field of TestNG Run Configuration.&lt;/p&gt;
+&lt;h3 id=&#34;number-of-parallel-threads-as-a-configuration-of-maven-surefire-plugin&#34;&gt;Number of parallel threads as a configuration of Maven Surefire Plugin&lt;/h3&gt;
+&lt;p&gt;Another option of setting up the number of threads is to specify this configuration in Maven Surefire Plugin if it is
+used it your project. This way you keep your configuration in &lt;code&gt;pom.xml&lt;/code&gt; and don&amp;rsquo;t add yet another argument to your
+pipeline command.&lt;/p&gt;
+&lt;p&gt;The configuration is pretty simple. Set the &lt;code&gt;dataproviderthreadcount&lt;/code&gt; in property name and number of threads in
+property value. Find below the full plugin declaration:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-xml&#34; data-lang=&#34;xml&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-surefire-plugin&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.22.0&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;property&amp;gt;&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;dataproviderthreadcount&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+        &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;30&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt;
+      &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt;
+    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+  &lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h2&gt;
+&lt;p&gt;In this blog post, I showed the way how you can easily set up TestNG and RestAssured to run the same test in parallel
+using a set of test data values. So this technique can be used for a sort of load testing or performance testing of
+your REST endpoints.&lt;/p&gt;
+&lt;p&gt;Just one drawback in the current implementation of parallel DataProvider execution is that you set the number of
+threads globally per project and you can&amp;rsquo;t control it per test method or per test class.&lt;/p&gt;
+&lt;p&gt;In case if the number of the test data values in DataProvider is less than the number of threads set, TestNG will
+open the number of the threads that is equal to a number of test data values available in DataProvider.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -70,7 +576,93 @@ send multiple parallel requests with RestAssured and a data provider from TestNG
       
       <guid>/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/</guid>
       <description>&lt;p&gt;In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
-This can be useful to get familiar with SaltStack and try its features.&lt;/p&gt;</description>
+This can be useful to get familiar with SaltStack and try its features.&lt;/p&gt;
+&lt;h1 id=&#34;introduction&#34;&gt;Introduction&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&#34;https://docs.saltstack.com/en/latest/&#34;&gt;SaltStack&lt;/a&gt; is a powerful configuration management tool that lets you automate
+provisioning and deployment of your systems and applications. It uses a master-minion paradigm where the master is
+controlling all the minions and applies certain states to minions according to the rules that you can set up.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;m assuming that you&amp;rsquo;re familiar with Vagrant. I encourage you to check out its
+&lt;a href=&#34;https://www.vagrantup.com/&#34;&gt;official website&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;initial-set-up-of-an-environment-with-vagrant&#34;&gt;Initial set-up of an environment with Vagrant&lt;/h2&gt;
+&lt;p&gt;I&amp;rsquo;m using an environment that consists of 4 virtual machines:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;master&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;web1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;web2&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;loadbalancer&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The latter three are minions. &lt;code&gt;web1&lt;/code&gt; &amp;amp; &lt;code&gt;web2&lt;/code&gt; will host and run a basic NodeJS Hello World application, while the
+&lt;code&gt;loadbalancer&lt;/code&gt; machine will balance an incoming load using Nginx.&lt;/p&gt;
+&lt;p&gt;With Vagrant you can define the configuration of each of your machines individually, but since both &lt;code&gt;web1&lt;/code&gt; and &lt;code&gt;web2&lt;/code&gt;
+are identical machines, then you can use some Ruby techniques to simplify it and describe it once.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ruby&#34; data-lang=&#34;ruby&#34;&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;..&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;NODES&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;each &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;i&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+  config&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;define &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;web&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;minion&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;box &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;BOX_IMAGE&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;network &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;private_network&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;ip&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;192.168.10.1&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;network &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;forwarded_port&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;guest&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8000&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;host&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;800&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#e6db74&#34;&gt;auto_correct&lt;/span&gt;: &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;hostname &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;web&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;#{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+
+    minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;provision &lt;span style=&#34;color:#e6db74&#34;&gt;:salt&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;salt&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+      salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;minion_config &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;salt/minion-configs/web-minion&amp;#34;&lt;/span&gt;
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+
+  &lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;What is interesting in this code block is the first line that defines a loop in Ruby. It loops from &lt;code&gt;1&lt;/code&gt; up to a value
+set in &lt;code&gt;NODES&lt;/code&gt; variable, that was declared previously. Thus, counter &lt;code&gt;i&lt;/code&gt; is used within a machine declaration to set
+a VM name, IP-address and exposed HTTP port. The rest that is set within a loop is a simple Vagrant configuration for
+a VM.&lt;/p&gt;
+&lt;p&gt;Another interesting code block here is: &lt;code&gt;minion.vm.provision&lt;/code&gt;. I will describe later in the post what it is used for.&lt;/p&gt;
+&lt;p&gt;The configuration of &lt;code&gt;master&lt;/code&gt; and &lt;code&gt;loadbalancer&lt;/code&gt; machines is fairly simple. You can find full Vagrantfile in my
+&lt;a href=&#34;https://github.com/plagov/vagrant-salt/blob/master/Vagrantfile&#34;&gt;GitHub repository&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;saltstack-set-up&#34;&gt;SaltStack set-up&lt;/h2&gt;
+&lt;p&gt;To set up Salt on a new machine, you can use a native package manager or use the bootstrap script provided by the
+SaltStack team with the latest stable version.&lt;/p&gt;
+&lt;h3 id=&#34;installing-saltstack-with-a-bootstrap-script&#34;&gt;Installing SaltStack with a bootstrap script&lt;/h3&gt;
+&lt;p&gt;To download the script, you will need to run the following command on a new machine.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;curl -L https://bootstrap.saltstack.com -o install_salt.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next, you will need to run the script in order to install Salt with a master or minion role. For a master you would
+run the following command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;sudo sh install_salt.sh -M -A 127.0.0.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;-M&lt;/code&gt; key in this command stands for installing a salt-master. And &lt;code&gt;-A&lt;/code&gt; configures a minion to reference to a master
+by a provided IP-address or DNS host-name.&lt;/p&gt;
+&lt;p&gt;To install Salt with a minion role you would run the following command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;sudo sh install_salt.sh -A 192.168.10.10
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You don&amp;rsquo;t provide a &lt;code&gt;-M&lt;/code&gt; key since you&amp;rsquo;re not installing the salt-master role and a value for a &lt;code&gt;-A&lt;/code&gt; key references
+to an IP-address of a salt-master that was set up a bit earlier.&lt;/p&gt;
+&lt;h3 id=&#34;installing-saltstack-with-a-vagrant-salt-provisioner&#34;&gt;Installing SaltStack with a Vagrant salt provisioner&lt;/h3&gt;
+&lt;p&gt;By reading these instructions you might think that it is not a very efficient way to configure salt on your machines.
+SSH-ing to every single machine to curl the script and run it manually is definitely not a good option.&lt;/p&gt;
+&lt;p&gt;Luckily, Vagrant has a built-in &lt;code&gt;salt&lt;/code&gt; provisioner, meaning that it provides us options to pre-configure the machine
+with either a salt-master or a salt-minion.&lt;/p&gt;
+&lt;p&gt;To install a salt-master on a Vagrant VM, provide the following instructions to a VM declaration:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ruby&#34; data-lang=&#34;ruby&#34;&gt;master&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;provision &lt;span style=&#34;color:#e6db74&#34;&gt;:salt&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;salt&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;master_config &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;salt/minion-configs/master&amp;#34;&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;install_master &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;no_minion &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;true&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;That instruction will take the file with pre-configured settings from &lt;code&gt;salt/minion-configs/master&lt;/code&gt; and will put it
+under &lt;code&gt;/srv/salt/master&lt;/code&gt; on a virtual machine, which is a default location for a salt-master configuration. Vagrant&amp;rsquo;s
+install options &lt;code&gt;install_master&lt;/code&gt; and &lt;code&gt;no_minion&lt;/code&gt; are also required for a salt-master installation.&lt;/p&gt;
+&lt;p&gt;To install a salt-minion, just a file with configurations is required:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ruby&#34; data-lang=&#34;ruby&#34;&gt;minion&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;vm&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;provision &lt;span style=&#34;color:#e6db74&#34;&gt;:salt&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;salt&lt;span style=&#34;color:#f92672&#34;&gt;|&lt;/span&gt;
+  salt&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;minion_config &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;salt/minion-configs/web-minion&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#66d9ef&#34;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This way, instead of SSH-ing into each machine and install salt one-by-one, we specify what parameters we would like
+salt-minion to have and what are for a salt-master. The minimum configuration we have to provide to a salt-minion is
+an address of a salt-master to communicate with. It is done easily with the following configuration in &lt;code&gt;web-minion&lt;/code&gt;
+file:&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&#34;language-conf&#34; data-lang=&#34;conf&#34;&gt;master: 192.168.10.10
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;There are a lot of options that you can predefine for a minion. Check
+&lt;a href=&#34;https://docs.saltstack.com/en/latest/ref/configuration/minion.html&#34;&gt;official documentation&lt;/a&gt; for more information.&lt;/p&gt;
+&lt;p&gt;To install salt-master with a default configuration, you can omit a &lt;code&gt;master_config&lt;/code&gt; option and just stay with
+&lt;code&gt;install_master&lt;/code&gt; and &lt;code&gt;no_minion&lt;/code&gt;. And should you need to tune a salt-master as per your needs, you can check an
+&lt;a href=&#34;https://docs.saltstack.com/en/latest/ref/configuration/master.html&#34;&gt;extensive documentation&lt;/a&gt; on this.&lt;/p&gt;
+&lt;h2 id=&#34;summary&#34;&gt;Summary&lt;/h2&gt;
+&lt;p&gt;In this blog post, I showed an easy option on how you can install SaltStack on a virtual machine with Vagrant. Next,
+when Salt is installed, you can start to try it and get familiar with it.&lt;/p&gt;
+&lt;p&gt;To check both SaltStack and Vagrant configurations, shown in this blog post, please visit my
+&lt;a href=&#34;https://github.com/plagov/vagrant-salt&#34;&gt;GitHub repository&lt;/a&gt;.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -79,7 +671,18 @@ This can be useful to get familiar with SaltStack and try its features.&lt;/p&gt
       <pubDate>Sun, 13 May 2018 00:08:14 +0200</pubDate>
       
       <guid>/posts/2018-05-13-introduction/</guid>
-      <description>&lt;p&gt;Welcome to my personal blog!&lt;/p&gt;</description>
+      <description>&lt;p&gt;Welcome to my personal blog!&lt;/p&gt;
+&lt;p&gt;My name is Vitali Plagov. I&amp;rsquo;m a Test Automation Engineer.
+In this personal blog I&amp;rsquo;m writing occasionally about things that are interesting for me and might be interesting and
+useful for you.&lt;/p&gt;
+&lt;p&gt;My profiles and contacts on different platforms:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.linkedin.com/in/plagov/&#34;&gt;LinkedIn&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.github.com/plagov/&#34;&gt;GitHub&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://stackoverflow.com/users/6934058/vitalii-plagov&#34;&gt;Stack Overflow&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://unix.stackexchange.com/users/203830/vitalii-plagov&#34;&gt;Unix &amp;amp; Linux Stack Exchange&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;vitalii.plagov@gmail.com&#34;&gt;E-mail&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description>
     </item>
     
   </channel>

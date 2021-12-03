@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+
+<html lang="en-us" data-theme="">
+<head>
+    
+        
+<meta charset="utf-8">
+<meta name="HandheldFriendly" content="True">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer-when-downgrade">
+
+<title>Project Euler: Solving problem 9 - Pythagorean triplet - Vitali Plagov Blog</title>
+
+<meta name="description" content="The problem 9 of the Project Euler is about a
+Pythagorean triplet. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code.">
+
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="favicon.png">
+
+
+
+    
+
+
+
+
+
+    
+    
+        
+    
+    
+
+    
+        <link rel="stylesheet" href="/css/style.min.a1bb75b7bacc629249668769b8f47e9922e365ba0d52e3e354557005e54bcee1.css" integrity="sha256-obt1t7rMYpJJZodpuPR&#43;mSLjZboNUuPjVFVwBeVLzuE=">
+    
+
+
+
+
+
+
+<meta property="og:title" content="Project Euler: Solving problem 9 - Pythagorean triplet" />
+<meta property="og:description" content="The problem 9 of the Project Euler is about a
+Pythagorean triplet. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/" /><meta property="og:image" content="images/og-featured.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-09-20T00:00:00&#43;00:00" />
+<meta property="article:modified_time" content="2021-09-20T00:00:00&#43;00:00" />
+
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="images/og-featured.png"/>
+
+<meta name="twitter:title" content="Project Euler: Solving problem 9 - Pythagorean triplet"/>
+<meta name="twitter:description" content="The problem 9 of the Project Euler is about a
+Pythagorean triplet. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code."/>
+
+
+
+
+
+
+
+
+    
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+	ga('create', 'UA-129563212-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+
+
+
+
+    
+</head>
+<body>
+    <a class="skip-main" href="#main">Skip to main content</a>
+    <div class="container">
+        <header class="common-header"> 
+            
+                <div class="header-top">
+    <h1 class="site-title">
+        <a href="/">Vitali Plagov Blog</a>
+    </h1>
+    <ul class="social-icons">
+
+
+</ul>
+
+</div>
+
+    <nav>
+        
+        
+        <a class="" href="/about/" title="About">About</a>
+        
+        <a class="" href="/posts/" title="Archive">Archive</a>
+        
+    </nav>
+
+
+
+
+            
+        </header>
+        <main id="main" tabindex="-1"> 
+            
+    
+
+    <article class="post h-entry">
+        <header class="post-header">
+            <h1 class="p-name post-title">Project Euler: Solving problem 9 - Pythagorean triplet</h1>
+
+            
+        </header>
+        <div class="content e-content">
+            <p>The <a href="https://projecteuler.net/problem=9">problem 9</a> of the Project Euler is about a
+<a href="https://en.wikipedia.org/wiki/Pythagorean_triple">Pythagorean triplet</a>. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code.</p>
+<h1 id="task">Task</h1>
+<p>So, the problem states that there&rsquo;s only one Pythagorean triple for which a sum of all its elements gives 1000.
+We need to find the product of this triplet.</p>
+<h1 id="solution">Solution</h1>
+<p>A Pythagorean triplet is a triplet of natural numbers that satisfies the following condition:</p>
+<p align="center">x<sup>2</sup> + y<sup>2</sup> = z<sup>2</sup></p>
+<p>In our case, we know neither <code>x</code>, nor the <code>y</code>, nor the <code>z</code>. The only condition that is known is that the sum of
+all three members is equal to 1000. The brute-force approach to find all three numbers is to start from <code>1</code>,
+check if numbers satisfy the condition and if not, increment and repeat. This approach is not optimal at all. It
+will be doing too many unnecessary operations.</p>
+<p>The Pythagorean triple has many features and characteristics. One among them helps to find all three elements. If we
+take two mutually prime numbers that are <code>u &gt; v &gt; 0</code>, then finding <code>x</code>, <code>y</code> and <code>z</code> is pretty simple:</p>
+<p align="center">x = u<sup>2</sup> - v<sup>2</sup></p>
+<p align="center">y = 2 * u * v</p>
+<p align="center">z = u<sup>2</sup> + v<sup>2</sup></p>
+<p>With help of these formulas, it is now easier to find the triplet. We just need to find the correct pair of <code>u</code> and <code>v</code>.</p>
+<p>In my implementation, I decided to define the initial values of both <code>u</code> and <code>v</code> equal to <code>1</code> and <code>2</code> respectively.
+Then, calculate <code>x</code>, <code>y</code>, <code>z</code> and their sum. Next, add a condition - if the sum is higher than the sum of the
+triplet from the task (1000), then increase both <code>u</code> and <code>v</code> by one and repeat. If the sum is lower than 1000, then
+increase just the <code>u</code> and repeat.</p>
+<p>This whole calculation is repeated while the sum won&rsquo;t be equal to 1000. So, the whole method will look as follows:
+<code>x</code>, <code>y</code> and <code>z</code> are defined as instance variables.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">productOfPythagoreanTripletWhichSumIsEqualTo</span><span style="color:#f92672">(</span><span style="color:#66d9ef">int</span> sumOfPythagoreanTriplet<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+    <span style="color:#66d9ef">long</span> v <span style="color:#f92672">=</span> 1<span style="color:#f92672">;</span>
+    <span style="color:#66d9ef">long</span> u <span style="color:#f92672">=</span> 2<span style="color:#f92672">;</span>
+
+    <span style="color:#66d9ef">while</span> <span style="color:#f92672">(</span>sum <span style="color:#f92672">!=</span> sumOfPythagoreanTriplet<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+        x <span style="color:#f92672">=</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">long</span><span style="color:#f92672">)</span> <span style="color:#f92672">(</span>Math<span style="color:#f92672">.</span><span style="color:#a6e22e">pow</span><span style="color:#f92672">(</span>u<span style="color:#f92672">,</span> 2<span style="color:#f92672">)</span> <span style="color:#f92672">-</span> Math<span style="color:#f92672">.</span><span style="color:#a6e22e">pow</span><span style="color:#f92672">(</span>v<span style="color:#f92672">,</span> 2<span style="color:#f92672">));</span>
+        y <span style="color:#f92672">=</span> 2 <span style="color:#f92672">*</span> u <span style="color:#f92672">*</span> v<span style="color:#f92672">;</span>
+        z <span style="color:#f92672">=</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">long</span><span style="color:#f92672">)</span> <span style="color:#f92672">(</span>Math<span style="color:#f92672">.</span><span style="color:#a6e22e">pow</span><span style="color:#f92672">(</span>u<span style="color:#f92672">,</span> 2<span style="color:#f92672">)</span> <span style="color:#f92672">+</span> Math<span style="color:#f92672">.</span><span style="color:#a6e22e">pow</span><span style="color:#f92672">(</span>v<span style="color:#f92672">,</span> 2<span style="color:#f92672">));</span>
+        sum <span style="color:#f92672">=</span> x <span style="color:#f92672">+</span> y <span style="color:#f92672">+</span> z<span style="color:#f92672">;</span>
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>sum <span style="color:#f92672">&gt;</span> sumOfPythagoreanTriplet<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+            v<span style="color:#f92672">++;</span>
+            u <span style="color:#f92672">=</span> v <span style="color:#f92672">+</span> 1<span style="color:#f92672">;</span>
+        <span style="color:#f92672">}</span>
+        u<span style="color:#f92672">++;</span>
+    <span style="color:#f92672">}</span>
+
+    <span style="color:#66d9ef">return</span> x <span style="color:#f92672">*</span> y <span style="color:#f92672">*</span> z<span style="color:#f92672">;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>When running a simple unit test, the execution time varies between 40 - 70 ms on an average Intel laptop. That looks
+pretty fast and efficient.</p>
+<h1 id="links">Links</h1>
+<p>Visit my <a href="https://github.com/plagov/project-euler">Project Euler repository</a> on GitHub to see the
+<a href="https://github.com/plagov/project-euler/blob/master/src/main/java/net/projecteuler/problems/Problem009.java">full solution</a>
+of this problem. Also, check the <a href="https://github.com/plagov/project-euler/blob/master/src/test/java/net/projecteuler/problems/Problem009Test.java">test</a> that finds the
+product of the Pythagorean triplet as requested by the task.</p>
+        </div>
+        
+
+    
+
+
+<div class="post-info">
+    
+        <div class="post-date dt-published">2021-09-20</div>
+    
+
+    <a class="post-hidden-url u-url" href="/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/">/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/</a>
+    <a href="" class="p-name p-author post-hidden-author h-card" rel="me">Vitali Plagov</a>
+
+
+    <div class="post-taxonomies">
+        
+            
+                <ul class="post-tags">
+                    
+                        <li><a href="tags/project-euler">#project-euler</a></li>
+                    
+                </ul>
+        
+    </div>
+</div>
+
+    </article>
+
+    
+        
+    <div class="pagination post-pagination">
+        <div class="left pagination-item ">
+            
+                <a href="/posts/2021-12-01-rule-engine-pattern/">How I learned about the rule engine pattern with Java</a>
+            
+        </div>
+        <div class="right pagination-item ">
+            
+                <a href="/posts/2021-08-27-project-euler-solving-problem-8/">Project Euler: Solving problem 8</a>
+            
+        </div>
+    </div>
+
+
+
+
+    
+
+    
+        <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "vplagov" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    
+
+    
+
+
+        </main>
+        
+            <footer class="common-footer">
+    
+    
+
+    <div class="common-footer-bottom">
+        
+        <div class="copyright">
+            <p>© Vitali Plagov, 2021<br>
+            Powered by <a target="_blank" rel="noopener noreferrer" href="https://gohugo.io/">Hugo</a>, theme <a target="_blank" rel="noopener noreferrer" href="https://github.com/mitrichius/hugo-theme-anubis">Anubis</a>.<br>
+            
+            </p>  
+        </div> 
+
+        
+
+    
+
+
+
+    <button class="theme-switcher">
+        Dark theme
+    </button>
+
+    <script>
+    const STORAGE_KEY = 'user-color-scheme'
+    const defaultTheme = "auto"
+
+    let currentTheme
+    let switchButton
+    let autoDefinedScheme = window.matchMedia('(prefers-color-scheme: dark)')
+
+    const autoChangeScheme = e => {
+        currentTheme = e.matches ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-theme', currentTheme)
+        changeButtonText()
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        switchButton = document.querySelector('.theme-switcher')
+        currentTheme = detectCurrentScheme()
+        if (currentTheme == 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark')
+        }
+        if (currentTheme == 'auto') {
+            autoChangeScheme(autoDefinedScheme);
+            autoDefinedScheme.addListener(autoChangeScheme);
+        }
+        changeButtonText()
+        switchButton.addEventListener('click', switchTheme, false)
+    })
+
+    function detectCurrentScheme() {
+        if (localStorage.getItem(STORAGE_KEY)) {
+            return localStorage.getItem(STORAGE_KEY)
+        } 
+        if (defaultTheme) {
+            return defaultTheme
+        } 
+        if (!window.matchMedia) {
+            return 'light'
+        } 
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark'
+        }
+        return 'light'
+    }
+
+    function changeButtonText()
+    {   
+        switchButton.textContent = currentTheme == 'dark' ?  "Light theme" : "Dark theme"
+    }
+
+    function switchTheme(e) {
+        if (currentTheme == 'dark') {
+            localStorage.setItem(STORAGE_KEY, 'light')
+            document.documentElement.setAttribute('data-theme', 'light')
+            currentTheme = 'light'
+        } else {
+            localStorage.setItem(STORAGE_KEY, 'dark')
+            document.documentElement.setAttribute('data-theme', 'dark')
+            currentTheme = 'dark'
+        }
+        changeButtonText()
+    }
+    </script>
+   
+    </div>
+
+    <p class="h-card vcard">
+
+    <a href= class="p-name u-url url fn" rel="me">Vitali Plagov</a> 
+
+    
+
+    
+</p> 
+</footer>
+
+        
+    </div>
+</body>
+</html>
