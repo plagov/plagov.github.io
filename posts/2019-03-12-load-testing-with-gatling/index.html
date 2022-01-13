@@ -161,13 +161,21 @@ which I know better.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#f92672">&lt;plugin&gt;</span>
   <span style="color:#f92672">&lt;groupId&gt;</span>io.gatling<span style="color:#f92672">&lt;/groupId&gt;</span>
   <span style="color:#f92672">&lt;artifactId&gt;</span>gatling-maven-plugin<span style="color:#f92672">&lt;/artifactId&gt;</span>
-  <span style="color:#f92672">&lt;version&gt;</span>3.1.2<span style="color:#f92672">&lt;/version&gt;</span>
+  <span style="color:#f92672">&lt;version&gt;</span>4.1.0<span style="color:#f92672">&lt;/version&gt;</span>
 <span style="color:#f92672">&lt;/plugin&gt;</span>
 </code></pre></div><p>And the final thing, to be able to run Scala with Maven, add <code>scala-maven-plugin</code> plugin.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#f92672">&lt;plugin&gt;</span>
   <span style="color:#f92672">&lt;groupId&gt;</span>net.alchim31.maven<span style="color:#f92672">&lt;/groupId&gt;</span>
   <span style="color:#f92672">&lt;artifactId&gt;</span>scala-maven-plugin<span style="color:#f92672">&lt;/artifactId&gt;</span>
   <span style="color:#f92672">&lt;version&gt;</span>4.5.6<span style="color:#f92672">&lt;/version&gt;</span>
+  <span style="color:#f92672">&lt;executions&gt;</span>
+    <span style="color:#f92672">&lt;execution&gt;</span>
+      <span style="color:#f92672">&lt;goals&gt;</span>
+        <span style="color:#f92672">&lt;goal&gt;</span>compile<span style="color:#f92672">&lt;/goal&gt;</span>
+        <span style="color:#f92672">&lt;goal&gt;</span>testCompile<span style="color:#f92672">&lt;/goal&gt;</span>
+      <span style="color:#f92672">&lt;/goals&gt;</span>
+    <span style="color:#f92672">&lt;/execution&gt;</span>
+  <span style="color:#f92672">&lt;/executions&gt;</span>
 <span style="color:#f92672">&lt;/plugin&gt;</span>
 </code></pre></div><h1 id="define-service-under-test-and-testing-scenario">Define service under test and testing scenario</h1>
 <p>Now, when all needed dependencies are set up. Next, we need to define the testing scenario.</p>
