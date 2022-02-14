@@ -96,7 +96,7 @@ successful evaluation. This class looks as follows:&lt;/p&gt;
         &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; rules
             &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;stream&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
             &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;rule &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; rule&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
-            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;flatMap&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;optional &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; optional&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Stream&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;of&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;orElseGet&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Stream&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;empty&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
+            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;flatMap&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Optional&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;stream&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
             &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;findFirst&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
             &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;orElseThrow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; IllegalArgumentException&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Selector does not match any rule&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
     &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
@@ -106,11 +106,6 @@ have a new rule - we implement a new class and add it to this list of rules.&lt;
 &lt;p&gt;The second thing is the processing of the client&amp;rsquo;s input across all rules. It streams the list of rules, evaluates each
 of them. The first non-empty result of the rule is being returned to the client. Otherwise, the rule engine will
 throw an exception.&lt;/p&gt;
-&lt;p&gt;A bit about the &lt;code&gt;flatMap()&lt;/code&gt; operation. The previous &lt;code&gt;map()&lt;/code&gt; function returns a stream of Optionals. Then, the
-&lt;code&gt;flatMap()&lt;/code&gt; converts a stream of empty Optionals to an empty stream. Otherwise, to a stream of non-empty
-AncestorResults encapsulated into Optional. That construct is compatible with Java 8 and looks verbose. Luckily,
-starting with Java 9, that could be simplified. Check more in this
-&lt;a href=&#34;https://www.baeldung.com/java-filter-stream-of-optional&#34;&gt;Baeldung&lt;/a&gt; article.&lt;/p&gt;
 &lt;h3 id=&#34;usage-of-a-rule-engine&#34;&gt;Usage of a rule engine&lt;/h3&gt;
 &lt;p&gt;Now, when we have all or rules implemented, the rule engine is defined, let&amp;rsquo;s see how to call and use this engine.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ClientSideThatCallsTheRuleEngine&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
@@ -130,7 +125,8 @@ Compare it with the straightforward approach with multiple &lt;code&gt;if - else
 this &lt;code&gt;if - else&lt;/code&gt; monster will grow.&lt;/p&gt;
 &lt;h2 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h2&gt;
 &lt;p&gt;In this blog post, I described an example of how to implement the rule engine pattern in Java. I&amp;rsquo;m glad I learned
-about this pattern. And I&amp;rsquo;m sure that I will have more opportunities to use this pattern.&lt;/p&gt;</description>
+about this pattern. And I&amp;rsquo;m sure that I will have more opportunities to use this pattern.&lt;/p&gt;
+&lt;p&gt;See the full code in this &lt;a href=&#34;https://github.com/plagov/blog-examples/tree/master/rule-engine-pattern&#34;&gt;GitHub repository&lt;/a&gt;.&lt;/p&gt;</description>
     </item>
     
   </channel>

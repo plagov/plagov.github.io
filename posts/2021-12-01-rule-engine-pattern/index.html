@@ -203,7 +203,7 @@ successful evaluation. This class looks as follows:</p>
         <span style="color:#66d9ef">return</span> rules
             <span style="color:#f92672">.</span><span style="color:#a6e22e">stream</span><span style="color:#f92672">()</span>
             <span style="color:#f92672">.</span><span style="color:#a6e22e">map</span><span style="color:#f92672">(</span>rule <span style="color:#f92672">-&gt;</span> rule<span style="color:#f92672">.</span><span style="color:#a6e22e">evaluate</span><span style="color:#f92672">(</span>selector<span style="color:#f92672">))</span>
-            <span style="color:#f92672">.</span><span style="color:#a6e22e">flatMap</span><span style="color:#f92672">(</span>optional <span style="color:#f92672">-&gt;</span> optional<span style="color:#f92672">.</span><span style="color:#a6e22e">map</span><span style="color:#f92672">(</span>Stream<span style="color:#f92672">::</span>of<span style="color:#f92672">).</span><span style="color:#a6e22e">orElseGet</span><span style="color:#f92672">(</span>Stream<span style="color:#f92672">::</span>empty<span style="color:#f92672">))</span>
+            <span style="color:#f92672">.</span><span style="color:#a6e22e">flatMap</span><span style="color:#f92672">(</span>Optional<span style="color:#f92672">::</span>stream<span style="color:#f92672">)</span>
             <span style="color:#f92672">.</span><span style="color:#a6e22e">findFirst</span><span style="color:#f92672">()</span>
             <span style="color:#f92672">.</span><span style="color:#a6e22e">orElseThrow</span><span style="color:#f92672">(()</span> <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">new</span> IllegalArgumentException<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Selector does not match any rule&#34;</span><span style="color:#f92672">));</span>
     <span style="color:#f92672">}</span>
@@ -213,11 +213,6 @@ have a new rule - we implement a new class and add it to this list of rules.</p>
 <p>The second thing is the processing of the client&rsquo;s input across all rules. It streams the list of rules, evaluates each
 of them. The first non-empty result of the rule is being returned to the client. Otherwise, the rule engine will
 throw an exception.</p>
-<p>A bit about the <code>flatMap()</code> operation. The previous <code>map()</code> function returns a stream of Optionals. Then, the
-<code>flatMap()</code> converts a stream of empty Optionals to an empty stream. Otherwise, to a stream of non-empty
-AncestorResults encapsulated into Optional. That construct is compatible with Java 8 and looks verbose. Luckily,
-starting with Java 9, that could be simplified. Check more in this
-<a href="https://www.baeldung.com/java-filter-stream-of-optional">Baeldung</a> article.</p>
 <h3 id="usage-of-a-rule-engine">Usage of a rule engine</h3>
 <p>Now, when we have all or rules implemented, the rule engine is defined, let&rsquo;s see how to call and use this engine.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">ClientSideThatCallsTheRuleEngine</span> <span style="color:#f92672">{</span>
@@ -238,6 +233,7 @@ this <code>if - else</code> monster will grow.</p>
 <h2 id="conclusion">Conclusion</h2>
 <p>In this blog post, I described an example of how to implement the rule engine pattern in Java. I&rsquo;m glad I learned
 about this pattern. And I&rsquo;m sure that I will have more opportunities to use this pattern.</p>
+<p>See the full code in this <a href="https://github.com/plagov/blog-examples/tree/master/rule-engine-pattern">GitHub repository</a>.</p>
         </div>
         
 
