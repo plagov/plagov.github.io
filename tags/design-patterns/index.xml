@@ -1,133 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>design-patterns on Vitali Plagov Blog</title>
+    <title>Design-Patterns on Vitali Plagov Blog</title>
     <link>/tags/design-patterns/</link>
-    <description>Vitali Plagov Blog (design-patterns)</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <description>Recent content in Design-Patterns on Vitali Plagov Blog</description>
+    <generator>Hugo</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 01 Dec 2021 00:00:00 +0000</lastBuildDate>
-    
     <atom:link href="/tags/design-patterns/index.xml" rel="self" type="application/rss+xml" />
-    
-    
     <item>
       <title>How I learned about the rule engine pattern with Java</title>
       <link>/posts/2021-12-01-rule-engine-pattern/</link>
       <pubDate>Wed, 01 Dec 2021 00:00:00 +0000</pubDate>
-      
       <guid>/posts/2021-12-01-rule-engine-pattern/</guid>
-      <description>&lt;p&gt;In this blog post, I would like to describe how I learned about the rule engine pattern while contributing to the
-open-source project.&lt;/p&gt;
-&lt;p&gt;Software developers work with 3rd party open source libraries daily. The more you use a library in your
-day-to-day work, the more familiar you become with it. In my job as a test automation engineer, I work with
-&lt;a href=&#34;https://github.com/selenide/selenide&#34;&gt;Selenide&lt;/a&gt; all the time. So, when I had to accomplish a certain task, I found
-out that Selenide doesn&amp;rsquo;t have a solution to help me with. So, I thought it could be a good opportunity to contribute
-new functionality to the open-source library.&lt;/p&gt;
-&lt;h2 id=&#34;problem&#34;&gt;Problem&lt;/h2&gt;
-&lt;p&gt;Here&amp;rsquo;s the problem I had. The Selenide library has a function that finds an ancestor in the HTML DOM of the current
-element. The ancestor is the same HTML element, so it has different attributes the one can use to locate it on the
-page - a tag name, a class name, an attribute, an attribute with a value. So, the task is to build an XPath
-expression for each of the options.&lt;/p&gt;
-&lt;p&gt;A very straightforward solution would be to make an &lt;code&gt;if - else if - else&lt;/code&gt; statement. But with the four
-options mentioned above, that construct would look too sloppy. There must be a better and more clean approach to
-accomplishing this.&lt;/p&gt;
-&lt;h2 id=&#34;rule-engine-pattern&#34;&gt;Rule Engine pattern&lt;/h2&gt;
-&lt;p&gt;There&amp;rsquo;s indeed a better approach for such kind of problem - Rule Engine pattern.
-The essence of this pattern is to split each of &lt;code&gt;if - else if - else&lt;/code&gt; branches in its rule class. Then, the main
-rule engine class will hold all the rules and will find the one that matches the client&amp;rsquo;s request.&lt;/p&gt;
-&lt;h3 id=&#34;define-a-rule-class&#34;&gt;Define a rule class&lt;/h3&gt;
-&lt;p&gt;To make sure that all rule classes will implement the same method, let&amp;rsquo;s define an interface that each class will
-implement:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;interface&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorRule&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-  Optional&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;AncestorResult&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String selector&lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
-&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next, let&amp;rsquo;s define the first rule class. That class will hold the logic defined in the &lt;code&gt;if - else&lt;/code&gt; branch:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorWithClassRule&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;implements&lt;/span&gt; AncestorRule &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-
-  &lt;span style=&#34;color:#a6e22e&#34;&gt;@Override&lt;/span&gt;
-  &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; Optional&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;AncestorResult&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String selector&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;isCssClass&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-      String xpath &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; format&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
-        &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;ancestor::*[contains(concat(&amp;#39; &amp;#39;, normalize-space(@class), &amp;#39; &amp;#39;), &amp;#39; %s &amp;#39;)][%s]&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;,&lt;/span&gt;
-        selector&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;substring&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;1&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
-      &lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
-      &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Optional&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;of&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorResult&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;xpath&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
-    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; Optional&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;empty&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
-  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;So, here&amp;rsquo;s the single logic that checks if the given selector matches the given condition - if it is a CSS class.
-The &lt;code&gt;isCssClass()&lt;/code&gt; is a function defined in the supper class (not shown here for brevity reasons). If the selector
-indeed is a CSS class, then it builds an XPath expression and returns it as an Optional of an &lt;code&gt;AncestorResult&lt;/code&gt;,
-otherwise an empty Optional.&lt;/p&gt;
-&lt;p&gt;This rule class is clean, short, easy to understand. It is written once and there&amp;rsquo;s no need to modify it often,
-unless the business logic of the rule is updated.&lt;/p&gt;
-&lt;p&gt;We define other rules the same way. Validate if the input matches the given condition, build and return a respective
-XPath expression. Otherwise, an empty result.&lt;/p&gt;
-&lt;h3 id=&#34;rule-result&#34;&gt;Rule result&lt;/h3&gt;
-&lt;p&gt;The above code has usage of the &lt;code&gt;AncestorResult&lt;/code&gt;. The purpose of this class is to wrap the result of the
-successful evaluation. This class looks as follows:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorResult&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-
-  &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; String value&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
-
-  &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorResult&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String value&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;this&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;value&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; value&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
-  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-
-  &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; String &lt;span style=&#34;color:#a6e22e&#34;&gt;getValue&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; value&lt;span style=&#34;color:#f92672&#34;&gt;;&lt;/span&gt;
-  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Just one class field that we set via constructor and access it with a getter.&lt;/p&gt;
-&lt;h3 id=&#34;rule-engine-class&#34;&gt;Rule Engine class&lt;/h3&gt;
-&lt;p&gt;Now, let&amp;rsquo;s finally get to the class that holds the rule engine logic.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;AncestorRuleEngine&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;private&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;static&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;final&lt;/span&gt; List&lt;span style=&#34;color:#f92672&#34;&gt;&amp;lt;&lt;/span&gt;AncestorRule&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; rules &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; Arrays&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;asList&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithTagRule&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithClassRule&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithAttributeRule&lt;span style=&#34;color:#f92672&#34;&gt;(),&lt;/span&gt;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorWithAttributeAndValueRule&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
-    &lt;span style=&#34;color:#f92672&#34;&gt;);&lt;/span&gt;
-
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; AncestorResult &lt;span style=&#34;color:#a6e22e&#34;&gt;process&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;String selector&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; rules
-            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;stream&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
-            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;map&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;rule &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; rule&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;evaluate&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;))&lt;/span&gt;
-            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;flatMap&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Optional&lt;span style=&#34;color:#f92672&#34;&gt;::&lt;/span&gt;stream&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
-            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;findFirst&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
-            &lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;orElseThrow&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; IllegalArgumentException&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Selector does not match any rule&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;));&lt;/span&gt;
-    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The first thing that is done in this class is a static list of all the rules that apply to this domain. If we
-have a new rule - we implement a new class and add it to this list of rules.&lt;/p&gt;
-&lt;p&gt;The second thing is the processing of the client&amp;rsquo;s input across all rules. It streams the list of rules, evaluates each
-of them. The first non-empty result of the rule is being returned to the client. Otherwise, the rule engine will
-throw an exception.&lt;/p&gt;
-&lt;h3 id=&#34;usage-of-a-rule-engine&#34;&gt;Usage of a rule engine&lt;/h3&gt;
-&lt;p&gt;Now, when we have all or rules implemented, the rule engine is defined, let&amp;rsquo;s see how to call and use this engine.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-java&#34; data-lang=&#34;java&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;ClientSideThatCallsTheRuleEngine&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-
-    &lt;span style=&#34;color:#66d9ef&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;void&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;executeClientCode&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
-        &lt;span style=&#34;color:#75715e&#34;&gt;// some executions
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;
-        AncestorRuleEngine ruleEngine &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;new&lt;/span&gt; AncestorRuleEngine&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
-        String xpath &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; ruleEngine&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;process&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;selector&lt;span style=&#34;color:#f92672&#34;&gt;).&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;getValue&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;();&lt;/span&gt;
-        
-        &lt;span style=&#34;color:#75715e&#34;&gt;// other executions
-&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;It is as simple as that. Instantiate a rule engine. Pass in the client&amp;rsquo;s input and get the result. It&amp;rsquo;s clean, short
-and precise. We hide all the low-level logic of validating the input, building a respective result, processing it.
-Compare it with the straightforward approach with multiple &lt;code&gt;if - else&lt;/code&gt; branches. The more logic we add, the more
-this &lt;code&gt;if - else&lt;/code&gt; monster will grow.&lt;/p&gt;
-&lt;h2 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h2&gt;
-&lt;p&gt;In this blog post, I described an example of how to implement the rule engine pattern in Java. I&amp;rsquo;m glad I learned
-about this pattern. And I&amp;rsquo;m sure that I will have more opportunities to use this pattern.&lt;/p&gt;
-&lt;p&gt;See the full code in this &lt;a href=&#34;https://github.com/plagov/blog-examples/tree/master/rule-engine-pattern&#34;&gt;GitHub repository&lt;/a&gt;.&lt;/p&gt;</description>
+      <description>&lt;p&gt;In this blog post, I would like to describe how I learned about the rule engine pattern while contributing to the&#xA;open-source project.&lt;/p&gt;</description>
     </item>
-    
   </channel>
 </rss>
