@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Posts on Vitali Plagov Blog</title>
     <link>/posts/</link>
     <description>Recent content in Posts on Vitali Plagov Blog</description>
-    <generator>Hugo</generator>
+    <generator>Hugo -- 0.135.0</generator>
     <language>en-us</language>
     <lastBuildDate>Wed, 01 Dec 2021 00:00:00 +0000</lastBuildDate>
     <atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
@@ -13,42 +13,54 @@
       <link>/posts/2021-12-01-rule-engine-pattern/</link>
       <pubDate>Wed, 01 Dec 2021 00:00:00 +0000</pubDate>
       <guid>/posts/2021-12-01-rule-engine-pattern/</guid>
-      <description>&lt;p&gt;In this blog post, I would like to describe how I learned about the rule engine pattern while contributing to the&#xA;open-source project.&lt;/p&gt;</description>
+      <description>&lt;p&gt;In this blog post, I would like to describe how I learned about the rule engine pattern while contributing to the
+open-source project.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Project Euler: Solving problem 9 - Pythagorean triplet</title>
       <link>/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/</link>
       <pubDate>Mon, 20 Sep 2021 00:00:00 +0000</pubDate>
       <guid>/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/</guid>
-      <description>&lt;p&gt;The &lt;a href=&#34;https://projecteuler.net/problem=9&#34;&gt;problem 9&lt;/a&gt; of the Project Euler is about a&#xA;&lt;a href=&#34;https://en.wikipedia.org/wiki/Pythagorean_triple&#34;&gt;Pythagorean triplet&lt;/a&gt;. It&amp;rsquo;s a good problem as it gives a chance to&#xA;practice implementing mathematical formulae with the Java code.&lt;/p&gt;</description>
+      <description>&lt;p&gt;The &lt;a href=&#34;https://projecteuler.net/problem=9&#34;&gt;problem 9&lt;/a&gt; of the Project Euler is about a
+&lt;a href=&#34;https://en.wikipedia.org/wiki/Pythagorean_triple&#34;&gt;Pythagorean triplet&lt;/a&gt;. It&amp;rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Project Euler: Solving problem 8</title>
       <link>/posts/2021-08-27-project-euler-solving-problem-8/</link>
       <pubDate>Fri, 27 Aug 2021 00:00:00 +0000</pubDate>
       <guid>/posts/2021-08-27-project-euler-solving-problem-8/</guid>
-      <description>&lt;p&gt;&lt;a href=&#34;https://projecteuler.net/&#34;&gt;Project Euler&lt;/a&gt; is a website with hundreds of mathematical and algorithmic problems.&#xA;Some time ago I started solving those issues using Java. My goal is to practice general programing and&#xA;algorithmic skills using the latest version of Java. So, in this blog post, I will shortly describe the solution to&#xA;problem 8.&lt;/p&gt;</description>
+      <description>&lt;p&gt;&lt;a href=&#34;https://projecteuler.net/&#34;&gt;Project Euler&lt;/a&gt; is a website with hundreds of mathematical and algorithmic problems.
+Some time ago I started solving those issues using Java. My goal is to practice general programing and
+algorithmic skills using the latest version of Java. So, in this blog post, I will shortly describe the solution to
+problem 8.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Load Testing With Gatling</title>
       <link>/posts/2019-03-12-load-testing-with-gatling/</link>
       <pubDate>Tue, 12 Mar 2019 21:18:54 +0200</pubDate>
       <guid>/posts/2019-03-12-load-testing-with-gatling/</guid>
-      <description>&lt;p&gt;In the &lt;a href=&#34;/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/&#34;&gt;previous blog post&lt;/a&gt;&#xA;I&amp;rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending&#xA;multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more&#xA;suitable tool for such kind of task.&lt;/p&gt;</description>
+      <description>&lt;p&gt;In the &lt;a href=&#34;/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/&#34;&gt;previous blog post&lt;/a&gt;
+I&amp;rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
+multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
+suitable tool for such kind of task.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Running Multiple Parallel Requests With RestAssured and TestNG</title>
       <link>/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/</link>
       <pubDate>Thu, 13 Sep 2018 21:13:42 +0200</pubDate>
       <guid>/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/</guid>
-      <description>&lt;p&gt;RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can&#xA;measure the response time and assert it against a condition you set. In this blog post, I describe the way how to&#xA;send multiple parallel requests with RestAssured and a data provider from TestNG.&lt;/p&gt;</description>
+      <description>&lt;p&gt;RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
+measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
+send multiple parallel requests with RestAssured and a data provider from TestNG.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Installing SaltStack Within a Vagrant Environment</title>
       <link>/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/</link>
       <pubDate>Sun, 20 May 2018 21:04:50 +0200</pubDate>
       <guid>/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/</guid>
-      <description>&lt;p&gt;In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.&#xA;This can be useful to get familiar with SaltStack and try its features.&lt;/p&gt;</description>
+      <description>&lt;p&gt;In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
+This can be useful to get familiar with SaltStack and try its features.&lt;/p&gt;</description>
     </item>
     <item>
       <title>Welcome!</title>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Running Multiple Parallel Requests With RestAssured and TestNG | Vitali Plagov Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
+measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
+send multiple parallel requests with RestAssured and a data provider from TestNG.">
+<meta name="author" content="Vitali Plagov">
+<link rel="canonical" href="/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.fc220c15db4aef0318bbf30adc45d33d4d7c88deff3238b23eb255afdc472ca6.css" integrity="sha256-/CIMFdtK7wMYu/MK3EXTPU18iN7/MjiyPrJVr9xHLKY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Running Multiple Parallel Requests With RestAssured and TestNG" />
+<meta property="og:description" content="RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
+measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
+send multiple parallel requests with RestAssured and a data provider from TestNG." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2018-09-13T21:13:42+02:00" />
+<meta property="article:modified_time" content="2018-09-13T21:13:42+02:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Running Multiple Parallel Requests With RestAssured and TestNG"/>
+<meta name="twitter:description" content="RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
+measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
+send multiple parallel requests with RestAssured and a data provider from TestNG."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "/posts/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Running Multiple Parallel Requests With RestAssured and TestNG",
+      "item": "/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Running Multiple Parallel Requests With RestAssured and TestNG",
+  "name": "Running Multiple Parallel Requests With RestAssured and TestNG",
+  "description": "RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can measure the response time and assert it against a condition you set. In this blog post, I describe the way how to send multiple parallel requests with RestAssured and a data provider from TestNG.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can measure the response time and assert it against a condition you set. In this blog post, I describe the way how to send multiple parallel requests with RestAssured and a data provider from TestNG.\nIntroduction Consider the following scenario. You have to execute the same test method with multiple test data values against a REST API endpoint. Moreover, you have to run all of them in parallel at the same time. A real-world scenario could be to check how a service under test will respond to multiple requests sent simultaneously, to test the response time, for example.\nFor REST API testing, a common tool in Java world is the RestAssured library. I assume that you have already some experience with this library (if not, check its getting started guide and documentation), so let’s set up first request specification.\nRestAssured specification configuration In this presentation I will solve the following task: having a list of certain codes/IDs, I need to send the same POST request towards a service endpoint each with its code/ID from the list.\nLet’s first set up RestAssured specification configuration. I want to reuse the same configuration for all test methods in my class, so I’ll define first the specification as a class field and will put the builder configuration in @BeforeMethod of TestNG.\nRequestSpecification specification; @BeforeMethod public void setUpSpecification(){ RequestSpecBuilder builder = new RequestSpecBuilder(); builder.addQueryParam(parameterName, parameterValue); // define common parameters builder.setContentType(ContentType.JSON); specification = builder.build(); } So, each of the tests in my test class will reuse the same specification.\nUsing TestNG DataProvider Since the task assumes that I will use the same test method with different data values, TestNG DataProvider feature will help to make this easy to set up without code duplication. What DataProvider is - it is a method that supplies test method with its values one by one so that test will continue to execute as long as DataProvider will continue to supply its values. You can hard code values in DataProvider method, or you can define an implementation of getting test values from another source (file, database or, another method or class). DataProvider method should return an array of type Object, either a one-dimensional or multi-dimensional.\nFor simplicity, I will use a one-dimensional array with hard-coded test values.\n@DataProvider(parallel = true) public Object[] getId() { return new Object[] {\"KD3856\", \"DK8937\", \"EF7301\"}; } @DataProvider annotation accepts several arguments as configurations. One of them is for example name which will set a custom name for your DataProvider. If this argument is omitted, the method’s name will be taken as a name.\nAnother argument is boolean parallel, which is set to false by default. Here’s what happens when you set the value for this argument to true.\nDataProvider will supply its test data values to test method in parallel, each in its own thread. Thus, the test method will be executed also in parallel, which will significantly improve the overall test execution time. If we would leave the default value for the parallel argument, then the test will be executed one by one.\nSet up a test method Once DataProvider is set up, now it’s time to set up test method and connect it to a DataProvider. Here’s the whole test method that sends a POST request.\n@Test(dataProvider = \"getId\") public void responseTimeOfEndpoint(String id) { Map\u003cString, String\u003e map = new HashMap\u003c\u003e(); map.put(\"id\", id); given() .spec(specification) .body(map) .when() .log() .all() .post(ENDPOINT_ADDRESS) .then() .time(lessThan(2000L)) .and() .statusCode(200); } Let’s describe this test method in detail.\nTestNG @Test annotation accepts argument dataProvider that points to a name of a DataProvider that we want to use. We set DataProvider’s method name since we didn’t specify a custom name for a DataProvider.\nIn order for the test method to get a test value from a DataProvider, test method should accept arguments of the same type as DataProvider’s test value is. In our example, DataProvider returns an array of strings. Thus, the test method should accept an argument of a String type. If we would have a multi-dimensional String array in DataProvider, then the test method would accept two String arguments.\nWhen we need to use the test data value, then we use this argument variable. So we did in map.put(\"id\", id); expression when creating a body for a POST request.\nNext goes a pretty common RestAssured DSL for a POST method that asserts that a response is received within 2 seconds and its status is 200 OK.\nSet up a number of threads for a DataProvider When you set a parallel argument of @DataProvider annotation to true you also need to specify the number of parallel threads to be open.\nThat is done in two ways:\nas a command line argument passed to Maven as a configuration of Maven Surefire Plugin Let’s describe both options.\nNumber of parallel threads passed as a command line argument Just include the following parameter in your Maven command with the number of threads you need to open: -Ddataproviderthreadcount=30.\nTo run tests within IntelliJ IDEA, use the same syntax in “VM options” field of TestNG Run Configuration.\nNumber of parallel threads as a configuration of Maven Surefire Plugin Another option of setting up the number of threads is to specify this configuration in Maven Surefire Plugin if it is used it your project. This way you keep your configuration in pom.xml and don’t add yet another argument to your pipeline command.\nThe configuration is pretty simple. Set the dataproviderthreadcount in property name and number of threads in property value. Find below the full plugin declaration:\norg.apache.maven.plugins maven-surefire-plugin 2.22.0 dataproviderthreadcount 30 Conclusion In this blog post, I showed the way how you can easily set up TestNG and RestAssured to run the same test in parallel using a set of test data values. So this technique can be used for a sort of load testing or performance testing of your REST endpoints.\nJust one drawback in the current implementation of parallel DataProvider execution is that you set the number of threads globally per project and you can’t control it per test method or per test class.\nIn case if the number of the test data values in DataProvider is less than the number of threads set, TestNG will open the number of the threads that is equal to a number of test data values available in DataProvider.\n",
+  "wordCount" : "1076",
+  "inLanguage": "en",
+  "datePublished": "2018-09-13T21:13:42+02:00",
+  "dateModified": "2018-09-13T21:13:42+02:00",
+  "author":{
+    "@type": "Person",
+    "name": "Vitali Plagov"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Vitali Plagov Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="Vitali Plagov Blog (Alt + H)">Vitali Plagov Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="/posts/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Running Multiple Parallel Requests With RestAssured and TestNG
+    </h1>
+    <div class="post-meta"><span title='2018-09-13 21:13:42 +0200 +0200'>2018-09-13</span>&nbsp;·&nbsp;Vitali Plagov
+
+</div>
+  </header> 
+  <div class="post-content"><p>RestAssured can be used not only for sending HTTP requests and asserting response body and headers. It also can
+measure the response time and assert it against a condition you set. In this blog post, I describe the way how to
+send multiple parallel requests with RestAssured and a data provider from TestNG.</p>
+<h1 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h1>
+<p>Consider the following scenario. You have to execute the same test method with multiple test data values against a
+REST API endpoint. Moreover, you have to run all of them in parallel at the same time. A real-world scenario could be
+to check how a service under test will respond to multiple requests sent simultaneously, to test the response time,
+for example.</p>
+<p>For REST API testing, a common tool in Java world is the <a href="http://rest-assured.io/">RestAssured</a> library. I assume
+that you have already some experience with this library (if not, check its
+<a href="https://github.com/rest-assured/rest-assured/wiki/GettingStarted">getting started</a> guide and
+<a href="https://github.com/rest-assured/rest-assured/wiki/Usage">documentation</a>), so let&rsquo;s set up first request specification.</p>
+<h2 id="restassured-specification-configuration">RestAssured specification configuration<a hidden class="anchor" aria-hidden="true" href="#restassured-specification-configuration">#</a></h2>
+<p>In this presentation I will solve the following task: having a list of certain codes/IDs, I need to send the same
+POST request towards a service endpoint each with its code/ID from the list.</p>
+<p>Let&rsquo;s first set up RestAssured specification configuration. I want to reuse the same configuration for all test
+methods in my class, so I&rsquo;ll define first the specification as a class field and will put the builder configuration
+in <code>@BeforeMethod</code> of TestNG.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span>RequestSpecification specification;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@BeforeMethod</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">setUpSpecification</span>(){
+</span></span><span style="display:flex;"><span>  RequestSpecBuilder builder <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> RequestSpecBuilder();
+</span></span><span style="display:flex;"><span>  builder.<span style="color:#a6e22e">addQueryParam</span>(parameterName, parameterValue); <span style="color:#75715e">// define common parameters</span>
+</span></span><span style="display:flex;"><span>  builder.<span style="color:#a6e22e">setContentType</span>(ContentType.<span style="color:#a6e22e">JSON</span>);
+</span></span><span style="display:flex;"><span>  specification <span style="color:#f92672">=</span> builder.<span style="color:#a6e22e">build</span>();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>So, each of the tests in my test class will reuse the same specification.</p>
+<h2 id="using-testng-dataprovider">Using TestNG DataProvider<a hidden class="anchor" aria-hidden="true" href="#using-testng-dataprovider">#</a></h2>
+<p>Since the task assumes that I will use the same test method with different data values, TestNG DataProvider feature
+will help to make this easy to set up without code duplication. What <code>DataProvider</code> is - it is a method that supplies
+test method with its values one by one so that test will continue to execute as long as <code>DataProvider</code> will continue
+to supply its values. You can hard code values in <code>DataProvider</code> method, or you can define an implementation of
+getting test values from another source (file, database or, another method or class).
+<code>DataProvider</code> method should return an array of type <code>Object</code>, either a one-dimensional or multi-dimensional.</p>
+<p>For simplicity, I will use a one-dimensional array with hard-coded test values.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@DataProvider</span>(parallel <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> Object<span style="color:#f92672">[]</span> <span style="color:#a6e22e">getId</span>() {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">new</span> Object<span style="color:#f92672">[]</span> {<span style="color:#e6db74">&#34;KD3856&#34;</span>, <span style="color:#e6db74">&#34;DK8937&#34;</span>, <span style="color:#e6db74">&#34;EF7301&#34;</span>};
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>@DataProvider</code> annotation accepts several arguments as configurations. One of them is for example <code>name</code> which will
+set a custom name for your DataProvider. If this argument is omitted, the method&rsquo;s name will be taken as a name.</p>
+<p>Another argument is boolean <code>parallel</code>, which is set to <code>false</code> by default. Here&rsquo;s what happens when you set the
+value for this argument to <code>true</code>.</p>
+<p>DataProvider will supply its test data values to test method in parallel, each in its own thread. Thus, the test
+method will be executed also in parallel, which will significantly improve the overall test execution time. If we
+would leave the default value for the <code>parallel</code> argument, then the test will be executed one by one.</p>
+<h2 id="set-up-a-test-method">Set up a test method<a hidden class="anchor" aria-hidden="true" href="#set-up-a-test-method">#</a></h2>
+<p>Once DataProvider is set up, now it&rsquo;s time to set up test method and connect it to a DataProvider. Here&rsquo;s the whole
+test method that sends a POST request.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#a6e22e">@Test</span>(dataProvider <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;getId&#34;</span>)
+</span></span><span style="display:flex;"><span> <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">responseTimeOfEndpoint</span>(String id) {
+</span></span><span style="display:flex;"><span>   Map<span style="color:#f92672">&lt;</span>String, String<span style="color:#f92672">&gt;</span> map <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> HashMap<span style="color:#f92672">&lt;&gt;</span>();
+</span></span><span style="display:flex;"><span>   map.<span style="color:#a6e22e">put</span>(<span style="color:#e6db74">&#34;id&#34;</span>, id);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  given()
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">spec</span>(specification)
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">body</span>(map)
+</span></span><span style="display:flex;"><span>  .<span style="color:#a6e22e">when</span>()
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">log</span>()
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">all</span>()
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">post</span>(ENDPOINT_ADDRESS)
+</span></span><span style="display:flex;"><span>  .<span style="color:#a6e22e">then</span>()
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">time</span>(lessThan(2000L))
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">and</span>()
+</span></span><span style="display:flex;"><span>    .<span style="color:#a6e22e">statusCode</span>(200);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Let&rsquo;s describe this test method in detail.</p>
+<p>TestNG <code>@Test</code> annotation accepts argument <code>dataProvider</code> that points to a name of a DataProvider that we want to
+use. We set DataProvider&rsquo;s method name since we didn&rsquo;t specify a custom name for a DataProvider.</p>
+<p>In order for the test method to get a test value from a DataProvider, test method should accept arguments of the same
+type as DataProvider&rsquo;s test value is. In our example, DataProvider returns an array of strings. Thus, the test method
+should accept an argument of a String type. If we would have a multi-dimensional String array in DataProvider, then
+the test method would accept two String arguments.</p>
+<p>When we need to use the test data value, then we use this argument variable. So we did in <code>map.put(&quot;id&quot;, id);</code>
+expression when creating a body for a POST request.</p>
+<p>Next goes a pretty common RestAssured DSL for a POST method that asserts that a response is received within 2 seconds
+and its status is 200 OK.</p>
+<h2 id="set-up-a-number-of-threads-for-a-dataprovider">Set up a number of threads for a DataProvider<a hidden class="anchor" aria-hidden="true" href="#set-up-a-number-of-threads-for-a-dataprovider">#</a></h2>
+<p>When you set a <code>parallel</code> argument of <code>@DataProvider</code> annotation to <code>true</code> you also need to specify the number of
+parallel threads to be open.</p>
+<p>That is done in two ways:</p>
+<ul>
+<li>as a command line argument passed to Maven</li>
+<li>as a configuration of Maven Surefire Plugin</li>
+</ul>
+<p>Let&rsquo;s describe both options.</p>
+<h3 id="number-of-parallel-threads-passed-as-a-command-line-argument">Number of parallel threads passed as a command line argument<a hidden class="anchor" aria-hidden="true" href="#number-of-parallel-threads-passed-as-a-command-line-argument">#</a></h3>
+<p>Just include the following parameter in your Maven command with the number of threads you need to open:
+<code>-Ddataproviderthreadcount=30</code>.</p>
+<p>To run tests within IntelliJ IDEA, use the same syntax in &ldquo;VM options&rdquo; field of TestNG Run Configuration.</p>
+<h3 id="number-of-parallel-threads-as-a-configuration-of-maven-surefire-plugin">Number of parallel threads as a configuration of Maven Surefire Plugin<a hidden class="anchor" aria-hidden="true" href="#number-of-parallel-threads-as-a-configuration-of-maven-surefire-plugin">#</a></h3>
+<p>Another option of setting up the number of threads is to specify this configuration in Maven Surefire Plugin if it is
+used it your project. This way you keep your configuration in <code>pom.xml</code> and don&rsquo;t add yet another argument to your
+pipeline command.</p>
+<p>The configuration is pretty simple. Set the <code>dataproviderthreadcount</code> in property name and number of threads in
+property value. Find below the full plugin declaration:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;plugin&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;groupId&gt;</span>org.apache.maven.plugins<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;artifactId&gt;</span>maven-surefire-plugin<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;version&gt;</span>2.22.0<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;configuration&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;properties&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&lt;property&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;name&gt;</span>dataproviderthreadcount<span style="color:#f92672">&lt;/name&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;value&gt;</span>30<span style="color:#f92672">&lt;/value&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&lt;/property&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/properties&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/configuration&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/plugin&gt;</span>
+</span></span></code></pre></div><h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>In this blog post, I showed the way how you can easily set up TestNG and RestAssured to run the same test in parallel
+using a set of test data values. So this technique can be used for a sort of load testing or performance testing of
+your REST endpoints.</p>
+<p>Just one drawback in the current implementation of parallel DataProvider execution is that you set the number of
+threads globally per project and you can&rsquo;t control it per test method or per test class.</p>
+<p>In case if the number of the test data values in DataProvider is less than the number of threads set, TestNG will
+open the number of the threads that is equal to a number of test data values available in DataProvider.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="/">Vitali Plagov Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Project Euler: Solving problem 9 - Pythagorean triplet | Vitali Plagov Blog</title>
+<meta name="keywords" content="project-euler">
+<meta name="description" content="The problem 9 of the Project Euler is about a
+Pythagorean triplet. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code.">
+<meta name="author" content="Vitali Plagov">
+<link rel="canonical" href="/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.fc220c15db4aef0318bbf30adc45d33d4d7c88deff3238b23eb255afdc472ca6.css" integrity="sha256-/CIMFdtK7wMYu/MK3EXTPU18iN7/MjiyPrJVr9xHLKY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Project Euler: Solving problem 9 - Pythagorean triplet" />
+<meta property="og:description" content="The problem 9 of the Project Euler is about a
+Pythagorean triplet. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2021-09-20T00:00:00+00:00" />
+<meta property="article:modified_time" content="2021-09-20T00:00:00+00:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Project Euler: Solving problem 9 - Pythagorean triplet"/>
+<meta name="twitter:description" content="The problem 9 of the Project Euler is about a
+Pythagorean triplet. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "/posts/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Project Euler: Solving problem 9 - Pythagorean triplet",
+      "item": "/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Project Euler: Solving problem 9 - Pythagorean triplet",
+  "name": "Project Euler: Solving problem 9 - Pythagorean triplet",
+  "description": "The problem 9 of the Project Euler is about a Pythagorean triplet. It\u0026rsquo;s a good problem as it gives a chance to practice implementing mathematical formulae with the Java code.\n",
+  "keywords": [
+    "project-euler"
+  ],
+  "articleBody": "The problem 9 of the Project Euler is about a Pythagorean triplet. It’s a good problem as it gives a chance to practice implementing mathematical formulae with the Java code.\nTask So, the problem states that there’s only one Pythagorean triple for which a sum of all its elements gives 1000. We need to find the product of this triplet.\nSolution A Pythagorean triplet is a triplet of natural numbers that satisfies the following condition:\nx2 + y2 = z2\nIn our case, we know neither x, nor the y, nor the z. The only condition that is known is that the sum of all three members is equal to 1000. The brute-force approach to find all three numbers is to start from 1, check if numbers satisfy the condition and if not, increment and repeat. This approach is not optimal at all. It will be doing too many unnecessary operations.\nThe Pythagorean triple has many features and characteristics. One among them helps to find all three elements. If we take two mutually prime numbers that are u \u003e v \u003e 0, then finding x, y and z is pretty simple:\nx = u2 - v2\ny = 2 * u * v\nz = u2 + v2\nWith help of these formulas, it is now easier to find the triplet. We just need to find the correct pair of u and v.\nIn my implementation, I decided to define the initial values of both u and v equal to 1 and 2 respectively. Then, calculate x, y, z and their sum. Next, add a condition - if the sum is higher than the sum of the triplet from the task (1000), then increase both u and v by one and repeat. If the sum is lower than 1000, then increase just the u and repeat.\nThis whole calculation is repeated while the sum won’t be equal to 1000. So, the whole method will look as follows: x, y and z are defined as instance variables.\npublic long productOfPythagoreanTripletWhichSumIsEqualTo(int sumOfPythagoreanTriplet) { long v = 1; long u = 2; while (sum != sumOfPythagoreanTriplet) { x = (long) (Math.pow(u, 2) - Math.pow(v, 2)); y = 2 * u * v; z = (long) (Math.pow(u, 2) + Math.pow(v, 2)); sum = x + y + z; if (sum \u003e sumOfPythagoreanTriplet) { v++; u = v + 1; } u++; } return x * y * z; } When running a simple unit test, the execution time varies between 40 - 70 ms on an average Intel laptop. That looks pretty fast and efficient.\nLinks Visit my Project Euler repository on GitHub to see the full solution of this problem. Also, check the test that finds the product of the Pythagorean triplet as requested by the task.\n",
+  "wordCount" : "464",
+  "inLanguage": "en",
+  "datePublished": "2021-09-20T00:00:00Z",
+  "dateModified": "2021-09-20T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Vitali Plagov"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Vitali Plagov Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="Vitali Plagov Blog (Alt + H)">Vitali Plagov Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="/posts/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Project Euler: Solving problem 9 - Pythagorean triplet
+    </h1>
+    <div class="post-meta"><span title='2021-09-20 00:00:00 +0000 UTC'>2021-09-20</span>&nbsp;·&nbsp;Vitali Plagov
+
+</div>
+  </header> 
+  <div class="post-content"><p>The <a href="https://projecteuler.net/problem=9">problem 9</a> of the Project Euler is about a
+<a href="https://en.wikipedia.org/wiki/Pythagorean_triple">Pythagorean triplet</a>. It&rsquo;s a good problem as it gives a chance to
+practice implementing mathematical formulae with the Java code.</p>
+<h1 id="task">Task<a hidden class="anchor" aria-hidden="true" href="#task">#</a></h1>
+<p>So, the problem states that there&rsquo;s only one Pythagorean triple for which a sum of all its elements gives 1000.
+We need to find the product of this triplet.</p>
+<h1 id="solution">Solution<a hidden class="anchor" aria-hidden="true" href="#solution">#</a></h1>
+<p>A Pythagorean triplet is a triplet of natural numbers that satisfies the following condition:</p>
+<p align="center">x<sup>2</sup> + y<sup>2</sup> = z<sup>2</sup></p>
+<p>In our case, we know neither <code>x</code>, nor the <code>y</code>, nor the <code>z</code>. The only condition that is known is that the sum of
+all three members is equal to 1000. The brute-force approach to find all three numbers is to start from <code>1</code>,
+check if numbers satisfy the condition and if not, increment and repeat. This approach is not optimal at all. It
+will be doing too many unnecessary operations.</p>
+<p>The Pythagorean triple has many features and characteristics. One among them helps to find all three elements. If we
+take two mutually prime numbers that are <code>u &gt; v &gt; 0</code>, then finding <code>x</code>, <code>y</code> and <code>z</code> is pretty simple:</p>
+<p align="center">x = u<sup>2</sup> - v<sup>2</sup></p>
+<p align="center">y = 2 * u * v</p>
+<p align="center">z = u<sup>2</sup> + v<sup>2</sup></p>
+<p>With help of these formulas, it is now easier to find the triplet. We just need to find the correct pair of <code>u</code> and <code>v</code>.</p>
+<p>In my implementation, I decided to define the initial values of both <code>u</code> and <code>v</code> equal to <code>1</code> and <code>2</code> respectively.
+Then, calculate <code>x</code>, <code>y</code>, <code>z</code> and their sum. Next, add a condition - if the sum is higher than the sum of the
+triplet from the task (1000), then increase both <code>u</code> and <code>v</code> by one and repeat. If the sum is lower than 1000, then
+increase just the <code>u</code> and repeat.</p>
+<p>This whole calculation is repeated while the sum won&rsquo;t be equal to 1000. So, the whole method will look as follows:
+<code>x</code>, <code>y</code> and <code>z</code> are defined as instance variables.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">long</span> <span style="color:#a6e22e">productOfPythagoreanTripletWhichSumIsEqualTo</span>(<span style="color:#66d9ef">int</span> sumOfPythagoreanTriplet) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">long</span> v <span style="color:#f92672">=</span> 1;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">long</span> u <span style="color:#f92672">=</span> 2;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> (sum <span style="color:#f92672">!=</span> sumOfPythagoreanTriplet) {
+</span></span><span style="display:flex;"><span>        x <span style="color:#f92672">=</span> (<span style="color:#66d9ef">long</span>) (Math.<span style="color:#a6e22e">pow</span>(u, 2) <span style="color:#f92672">-</span> Math.<span style="color:#a6e22e">pow</span>(v, 2));
+</span></span><span style="display:flex;"><span>        y <span style="color:#f92672">=</span> 2 <span style="color:#f92672">*</span> u <span style="color:#f92672">*</span> v;
+</span></span><span style="display:flex;"><span>        z <span style="color:#f92672">=</span> (<span style="color:#66d9ef">long</span>) (Math.<span style="color:#a6e22e">pow</span>(u, 2) <span style="color:#f92672">+</span> Math.<span style="color:#a6e22e">pow</span>(v, 2));
+</span></span><span style="display:flex;"><span>        sum <span style="color:#f92672">=</span> x <span style="color:#f92672">+</span> y <span style="color:#f92672">+</span> z;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (sum <span style="color:#f92672">&gt;</span> sumOfPythagoreanTriplet) {
+</span></span><span style="display:flex;"><span>            v<span style="color:#f92672">++</span>;
+</span></span><span style="display:flex;"><span>            u <span style="color:#f92672">=</span> v <span style="color:#f92672">+</span> 1;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>        u<span style="color:#f92672">++</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> x <span style="color:#f92672">*</span> y <span style="color:#f92672">*</span> z;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>When running a simple unit test, the execution time varies between 40 - 70 ms on an average Intel laptop. That looks
+pretty fast and efficient.</p>
+<h1 id="links">Links<a hidden class="anchor" aria-hidden="true" href="#links">#</a></h1>
+<p>Visit my <a href="https://github.com/plagov/project-euler">Project Euler repository</a> on GitHub to see the
+<a href="https://github.com/plagov/project-euler/blob/master/src/main/java/net/projecteuler/problems/Problem009.java">full solution</a>
+of this problem. Also, check the <a href="https://github.com/plagov/project-euler/blob/master/src/test/java/net/projecteuler/problems/Problem009Test.java">test</a> that finds the
+product of the Pythagorean triplet as requested by the task.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/project-euler/">Project-Euler</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="/">Vitali Plagov Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

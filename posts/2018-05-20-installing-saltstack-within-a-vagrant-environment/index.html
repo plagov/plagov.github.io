@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Installing SaltStack Within a Vagrant Environment | Vitali Plagov Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
+This can be useful to get familiar with SaltStack and try its features.">
+<meta name="author" content="Vitali Plagov">
+<link rel="canonical" href="/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.fc220c15db4aef0318bbf30adc45d33d4d7c88deff3238b23eb255afdc472ca6.css" integrity="sha256-/CIMFdtK7wMYu/MK3EXTPU18iN7/MjiyPrJVr9xHLKY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Installing SaltStack Within a Vagrant Environment" />
+<meta property="og:description" content="In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
+This can be useful to get familiar with SaltStack and try its features." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2018-05-20T21:04:50+02:00" />
+<meta property="article:modified_time" content="2018-05-20T21:04:50+02:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Installing SaltStack Within a Vagrant Environment"/>
+<meta name="twitter:description" content="In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
+This can be useful to get familiar with SaltStack and try its features."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "/posts/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Installing SaltStack Within a Vagrant Environment",
+      "item": "/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Installing SaltStack Within a Vagrant Environment",
+  "name": "Installing SaltStack Within a Vagrant Environment",
+  "description": "In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment. This can be useful to get familiar with SaltStack and try its features.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment. This can be useful to get familiar with SaltStack and try its features.\nIntroduction SaltStack is a powerful configuration management tool that lets you automate provisioning and deployment of your systems and applications. It uses a master-minion paradigm where the master is controlling all the minions and applies certain states to minions according to the rules that you can set up.\nI’m assuming that you’re familiar with Vagrant. I encourage you to check out its official website.\nInitial set-up of an environment with Vagrant I’m using an environment that consists of 4 virtual machines:\nmaster web1 web2 loadbalancer The latter three are minions. web1 \u0026 web2 will host and run a basic NodeJS Hello World application, while the loadbalancer machine will balance an incoming load using Nginx.\nWith Vagrant you can define the configuration of each of your machines individually, but since both web1 and web2 are identical machines, then you can use some Ruby techniques to simplify it and describe it once.\n(1..NODES).each do |i| config.vm.define \"web#{i}\" do |minion| minion.vm.box = BOX_IMAGE minion.vm.network \"private_network\", ip: \"192.168.10.1#{i}\" minion.vm.network \"forwarded_port\", guest: 8000, host: \"800#{i}\",auto_correct: true minion.vm.hostname = \"web#{i}\" minion.vm.provision :salt do |salt| salt.minion_config = \"salt/minion-configs/web-minion\" end end end What is interesting in this code block is the first line that defines a loop in Ruby. It loops from 1 up to a value set in NODES variable, that was declared previously. Thus, counter i is used within a machine declaration to set a VM name, IP-address and exposed HTTP port. The rest that is set within a loop is a simple Vagrant configuration for a VM.\nAnother interesting code block here is: minion.vm.provision. I will describe later in the post what it is used for.\nThe configuration of master and loadbalancer machines is fairly simple. You can find full Vagrantfile in my GitHub repository.\nSaltStack set-up To set up Salt on a new machine, you can use a native package manager or use the bootstrap script provided by the SaltStack team with the latest stable version.\nInstalling SaltStack with a bootstrap script To download the script, you will need to run the following command on a new machine.\ncurl -L https://bootstrap.saltstack.com -o install_salt.sh Next, you will need to run the script in order to install Salt with a master or minion role. For a master you would run the following command:\nsudo sh install_salt.sh -M -A 127.0.0.1 -M key in this command stands for installing a salt-master. And -A configures a minion to reference to a master by a provided IP-address or DNS host-name.\nTo install Salt with a minion role you would run the following command:\nsudo sh install_salt.sh -A 192.168.10.10 You don’t provide a -M key since you’re not installing the salt-master role and a value for a -A key references to an IP-address of a salt-master that was set up a bit earlier.\nInstalling SaltStack with a Vagrant salt provisioner By reading these instructions you might think that it is not a very efficient way to configure salt on your machines. SSH-ing to every single machine to curl the script and run it manually is definitely not a good option.\nLuckily, Vagrant has a built-in salt provisioner, meaning that it provides us options to pre-configure the machine with either a salt-master or a salt-minion.\nTo install a salt-master on a Vagrant VM, provide the following instructions to a VM declaration:\nmaster.vm.provision :salt do |salt| salt.master_config = \"salt/minion-configs/master\" salt.install_master = true salt.no_minion = true end That instruction will take the file with pre-configured settings from salt/minion-configs/master and will put it under /srv/salt/master on a virtual machine, which is a default location for a salt-master configuration. Vagrant’s install options install_master and no_minion are also required for a salt-master installation.\nTo install a salt-minion, just a file with configurations is required:\nminion.vm.provision :salt do |salt| salt.minion_config = \"salt/minion-configs/web-minion\" end This way, instead of SSH-ing into each machine and install salt one-by-one, we specify what parameters we would like salt-minion to have and what are for a salt-master. The minimum configuration we have to provide to a salt-minion is an address of a salt-master to communicate with. It is done easily with the following configuration in web-minion file:\nmaster: 192.168.10.10 There are a lot of options that you can predefine for a minion. Check official documentation for more information.\nTo install salt-master with a default configuration, you can omit a master_config option and just stay with install_master and no_minion. And should you need to tune a salt-master as per your needs, you can check an extensive documentation on this.\nSummary In this blog post, I showed an easy option on how you can install SaltStack on a virtual machine with Vagrant. Next, when Salt is installed, you can start to try it and get familiar with it.\nTo check both SaltStack and Vagrant configurations, shown in this blog post, please visit my GitHub repository.\n",
+  "wordCount" : "832",
+  "inLanguage": "en",
+  "datePublished": "2018-05-20T21:04:50+02:00",
+  "dateModified": "2018-05-20T21:04:50+02:00",
+  "author":{
+    "@type": "Person",
+    "name": "Vitali Plagov"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/posts/2018-05-20-installing-saltstack-within-a-vagrant-environment/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Vitali Plagov Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="Vitali Plagov Blog (Alt + H)">Vitali Plagov Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="/posts/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Installing SaltStack Within a Vagrant Environment
+    </h1>
+    <div class="post-meta"><span title='2018-05-20 21:04:50 +0200 +0200'>2018-05-20</span>&nbsp;·&nbsp;Vitali Plagov
+
+</div>
+  </header> 
+  <div class="post-content"><p>In this blog post, I will describe how to install and use SaltStack in an isolated and safe Vagrant environment.
+This can be useful to get familiar with SaltStack and try its features.</p>
+<h1 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h1>
+<p><a href="https://docs.saltstack.com/en/latest/">SaltStack</a> is a powerful configuration management tool that lets you automate
+provisioning and deployment of your systems and applications. It uses a master-minion paradigm where the master is
+controlling all the minions and applies certain states to minions according to the rules that you can set up.</p>
+<p>I&rsquo;m assuming that you&rsquo;re familiar with Vagrant. I encourage you to check out its
+<a href="https://www.vagrantup.com/">official website</a>.</p>
+<h2 id="initial-set-up-of-an-environment-with-vagrant">Initial set-up of an environment with Vagrant<a hidden class="anchor" aria-hidden="true" href="#initial-set-up-of-an-environment-with-vagrant">#</a></h2>
+<p>I&rsquo;m using an environment that consists of 4 virtual machines:</p>
+<ul>
+<li><code>master</code></li>
+<li><code>web1</code></li>
+<li><code>web2</code></li>
+<li><code>loadbalancer</code></li>
+</ul>
+<p>The latter three are minions. <code>web1</code> &amp; <code>web2</code> will host and run a basic NodeJS Hello World application, while the
+<code>loadbalancer</code> machine will balance an incoming load using Nginx.</p>
+<p>With Vagrant you can define the configuration of each of your machines individually, but since both <code>web1</code> and <code>web2</code>
+are identical machines, then you can use some Ruby techniques to simplify it and describe it once.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ruby" data-lang="ruby"><span style="display:flex;"><span>(<span style="color:#ae81ff">1</span><span style="color:#f92672">..</span><span style="color:#66d9ef">NODES</span>)<span style="color:#f92672">.</span>each <span style="color:#66d9ef">do</span> <span style="color:#f92672">|</span>i<span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>  config<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>define <span style="color:#e6db74">&#34;web</span><span style="color:#e6db74">#{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span> <span style="color:#66d9ef">do</span> <span style="color:#f92672">|</span>minion<span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>    minion<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>box <span style="color:#f92672">=</span> <span style="color:#66d9ef">BOX_IMAGE</span>
+</span></span><span style="display:flex;"><span>    minion<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>network <span style="color:#e6db74">&#34;private_network&#34;</span>, <span style="color:#e6db74">ip</span>: <span style="color:#e6db74">&#34;192.168.10.1</span><span style="color:#e6db74">#{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>    minion<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>network <span style="color:#e6db74">&#34;forwarded_port&#34;</span>, <span style="color:#e6db74">guest</span>: <span style="color:#ae81ff">8000</span>, <span style="color:#e6db74">host</span>: <span style="color:#e6db74">&#34;800</span><span style="color:#e6db74">#{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>,<span style="color:#e6db74">auto_correct</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    minion<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>hostname <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;web</span><span style="color:#e6db74">#{</span>i<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    minion<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>provision <span style="color:#e6db74">:salt</span> <span style="color:#66d9ef">do</span> <span style="color:#f92672">|</span>salt<span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>      salt<span style="color:#f92672">.</span>minion_config <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;salt/minion-configs/web-minion&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">end</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span></code></pre></div><p>What is interesting in this code block is the first line that defines a loop in Ruby. It loops from <code>1</code> up to a value
+set in <code>NODES</code> variable, that was declared previously. Thus, counter <code>i</code> is used within a machine declaration to set
+a VM name, IP-address and exposed HTTP port. The rest that is set within a loop is a simple Vagrant configuration for
+a VM.</p>
+<p>Another interesting code block here is: <code>minion.vm.provision</code>. I will describe later in the post what it is used for.</p>
+<p>The configuration of <code>master</code> and <code>loadbalancer</code> machines is fairly simple. You can find full Vagrantfile in my
+<a href="https://github.com/plagov/vagrant-salt/blob/master/Vagrantfile">GitHub repository</a>.</p>
+<h2 id="saltstack-set-up">SaltStack set-up<a hidden class="anchor" aria-hidden="true" href="#saltstack-set-up">#</a></h2>
+<p>To set up Salt on a new machine, you can use a native package manager or use the bootstrap script provided by the
+SaltStack team with the latest stable version.</p>
+<h3 id="installing-saltstack-with-a-bootstrap-script">Installing SaltStack with a bootstrap script<a hidden class="anchor" aria-hidden="true" href="#installing-saltstack-with-a-bootstrap-script">#</a></h3>
+<p>To download the script, you will need to run the following command on a new machine.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>curl -L https://bootstrap.saltstack.com -o install_salt.sh
+</span></span></code></pre></div><p>Next, you will need to run the script in order to install Salt with a master or minion role. For a master you would
+run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>sudo sh install_salt.sh -M -A 127.0.0.1
+</span></span></code></pre></div><p><code>-M</code> key in this command stands for installing a salt-master. And <code>-A</code> configures a minion to reference to a master
+by a provided IP-address or DNS host-name.</p>
+<p>To install Salt with a minion role you would run the following command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>sudo sh install_salt.sh -A 192.168.10.10
+</span></span></code></pre></div><p>You don&rsquo;t provide a <code>-M</code> key since you&rsquo;re not installing the salt-master role and a value for a <code>-A</code> key references
+to an IP-address of a salt-master that was set up a bit earlier.</p>
+<h3 id="installing-saltstack-with-a-vagrant-salt-provisioner">Installing SaltStack with a Vagrant salt provisioner<a hidden class="anchor" aria-hidden="true" href="#installing-saltstack-with-a-vagrant-salt-provisioner">#</a></h3>
+<p>By reading these instructions you might think that it is not a very efficient way to configure salt on your machines.
+SSH-ing to every single machine to curl the script and run it manually is definitely not a good option.</p>
+<p>Luckily, Vagrant has a built-in <code>salt</code> provisioner, meaning that it provides us options to pre-configure the machine
+with either a salt-master or a salt-minion.</p>
+<p>To install a salt-master on a Vagrant VM, provide the following instructions to a VM declaration:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ruby" data-lang="ruby"><span style="display:flex;"><span>master<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>provision <span style="color:#e6db74">:salt</span> <span style="color:#66d9ef">do</span> <span style="color:#f92672">|</span>salt<span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>  salt<span style="color:#f92672">.</span>master_config <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;salt/minion-configs/master&#34;</span>
+</span></span><span style="display:flex;"><span>  salt<span style="color:#f92672">.</span>install_master <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>  salt<span style="color:#f92672">.</span>no_minion <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span></code></pre></div><p>That instruction will take the file with pre-configured settings from <code>salt/minion-configs/master</code> and will put it
+under <code>/srv/salt/master</code> on a virtual machine, which is a default location for a salt-master configuration. Vagrant&rsquo;s
+install options <code>install_master</code> and <code>no_minion</code> are also required for a salt-master installation.</p>
+<p>To install a salt-minion, just a file with configurations is required:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-ruby" data-lang="ruby"><span style="display:flex;"><span>minion<span style="color:#f92672">.</span>vm<span style="color:#f92672">.</span>provision <span style="color:#e6db74">:salt</span> <span style="color:#66d9ef">do</span> <span style="color:#f92672">|</span>salt<span style="color:#f92672">|</span>
+</span></span><span style="display:flex;"><span>  salt<span style="color:#f92672">.</span>minion_config <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;salt/minion-configs/web-minion&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">end</span>
+</span></span></code></pre></div><p>This way, instead of SSH-ing into each machine and install salt one-by-one, we specify what parameters we would like
+salt-minion to have and what are for a salt-master. The minimum configuration we have to provide to a salt-minion is
+an address of a salt-master to communicate with. It is done easily with the following configuration in <code>web-minion</code>
+file:</p>
+<pre tabindex="0"><code class="language-conf" data-lang="conf">master: 192.168.10.10
+</code></pre><p>There are a lot of options that you can predefine for a minion. Check
+<a href="https://docs.saltstack.com/en/latest/ref/configuration/minion.html">official documentation</a> for more information.</p>
+<p>To install salt-master with a default configuration, you can omit a <code>master_config</code> option and just stay with
+<code>install_master</code> and <code>no_minion</code>. And should you need to tune a salt-master as per your needs, you can check an
+<a href="https://docs.saltstack.com/en/latest/ref/configuration/master.html">extensive documentation</a> on this.</p>
+<h2 id="summary">Summary<a hidden class="anchor" aria-hidden="true" href="#summary">#</a></h2>
+<p>In this blog post, I showed an easy option on how you can install SaltStack on a virtual machine with Vagrant. Next,
+when Salt is installed, you can start to try it and get familiar with it.</p>
+<p>To check both SaltStack and Vagrant configurations, shown in this blog post, please visit my
+<a href="https://github.com/plagov/vagrant-salt">GitHub repository</a>.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="/">Vitali Plagov Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Load Testing With Gatling | Vitali Plagov Blog</title>
+<meta name="keywords" content="">
+<meta name="description" content="In the previous blog post
+I&rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
+multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
+suitable tool for such kind of task.">
+<meta name="author" content="Vitali Plagov">
+<link rel="canonical" href="/posts/2019-03-12-load-testing-with-gatling/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.fc220c15db4aef0318bbf30adc45d33d4d7c88deff3238b23eb255afdc472ca6.css" integrity="sha256-/CIMFdtK7wMYu/MK3EXTPU18iN7/MjiyPrJVr9xHLKY=" rel="preload stylesheet" as="style">
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="/posts/2019-03-12-load-testing-with-gatling/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Load Testing With Gatling" />
+<meta property="og:description" content="In the previous blog post
+I&rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
+multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
+suitable tool for such kind of task." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/posts/2019-03-12-load-testing-with-gatling/" /><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2019-03-12T21:18:54+02:00" />
+<meta property="article:modified_time" content="2019-03-12T21:18:54+02:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Load Testing With Gatling"/>
+<meta name="twitter:description" content="In the previous blog post
+I&rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
+multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
+suitable tool for such kind of task."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "/posts/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Load Testing With Gatling",
+      "item": "/posts/2019-03-12-load-testing-with-gatling/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Load Testing With Gatling",
+  "name": "Load Testing With Gatling",
+  "description": "In the previous blog post I\u0026rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more suitable tool for such kind of task.\n",
+  "keywords": [
+    
+  ],
+  "articleBody": "In the previous blog post I’ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more suitable tool for such kind of task.\nAbout Gatling Gatling is an open-source tool that allows you to make load testing of web applications. It provides a flexible DSL that makes possible to emulate real production user scenarios. For example, consider the following scenario: 100 users are sending requests to the service for 3 minutes, then the number of users decreases and stays for the next 2 minutes and then again increases for 5 minutes. The load that users put on the service is not constant, it is floating. This is a very common scenario, there are peaks and lows. Thus, just throwing a fixed number of requests to the service at the same time during a certain period of time - this is not how real production scenario looks like.\nGatling runs on JVM and is written in Scala. But there’s no need in Scala programming experience to write tests. The DSL that Gatling provides is self-expressive.\nInitialize project with Gatling and Maven Gatling has good integration with build tools like SBT and Maven. Though SBT is a popular choice for Scala, I have more experience with Maven and since there’s a plugin developed by Gatling developers, I decided to go with the tool which I know better.\nLet’s create a new Maven project. To add Gatling to the project, add the following dependency:\nio.gatling.highcharts gatling-charts-highcharts 3.7.3 Since we’re using Maven, a gatling-maven-plugin should be added. Put this block inside the build section of pom.xml file.\nio.gatling gatling-maven-plugin 4.1.0 And the final thing, to be able to run Scala with Maven, add scala-maven-plugin plugin.\nnet.alchim31.maven scala-maven-plugin 4.5.6 compile testCompile Define service under test and testing scenario Now, when all needed dependencies are set up. Next, we need to define the testing scenario.\nFor this demo, I will use one of the endpoints provided by Postman Echo service which is a free service that provides HTTP access for testing and demo purposes.\nThe scenario that we’re going to emulate will be as follows: during the period of 2 minutes, we will send 200 requests that will be distributed evenly during that period, next we will increase the load to 300 users during one minute and finally will finish the scenario with 200 users during one minute. And we will set an assert that the response time of each request should be no more than 800 ms and the status code of the response should be equal to 200 OK.\nThis scenario is used just for demo purposes. In a real project, before starting to automate the scenario, analyze the potential load that is expected on your service and find out what scenario will suit your case.\nCreate a class and make this class to extend the Gatling’s Simulation class. That is mandatory for all classes that are expected to run the scenario.\nNext, define some constants, like the base URL, query parameters and protocol configuration.\nprivate val url = \"https://postman-echo.com/get\" private val queryParams = Map(\"foo1\" -\u003e \"bar1\", \"foo2\" -\u003e \"bar2\") private def httpConfBuilder(envUrl: String): HttpProtocolBuilder = { http .baseUrl(envUrl) .acceptHeader(\"application/json\") } After some constants are set up, next define the scenario itself that will represent the actual business logic. Define here all the query and path params that are accepted by the service, request body and asserts (for response time, for example).\nprivate val sendGetRequest = scenario(\"Get date from endpoint\") .exec(http(\"GET method\") .get(\"/\") .queryParamMap(queryParams) .check(status is 200, responseTimeInMillis lte 800)) In this example, I’m sending a GET request to the particular endpoint of the service (root in the example below). Define your custom name for the whole scenario in scenario method, next, set the name of the particular request in exec method and all the configuration of the request. Since the business logic of a real project might assume sending different type of requests to different endpoints with different asserts, it is possible to chain multiple requests inside the one scenario.\nNext, after scenario is defined, the set up should be done. The set up of the scenario is the actual logic of how many request should be sent, how much time the scenario should be executed, how the user load should be spread during the execution. All of that is done using the setUp method.\nsetUp(sendGetRequest.inject( rampUsers(200) during(2 minutes), rampUsers(300) during (2 minutes), rampUsers(200) during(1 minutes) )).protocols(httpConfBuilder(url)) Pass the scenario name as a method argument and define the load logic inside the inject method. When finish with defining the load logic, set the HTTP configration to be used during the execution.\nThat’s it with the basic GET request with Gaatling. Run the following command to start the scenario execution.\nmvn gatling:test Upon the finish, Gatling will generate the HTML report with statistics and graphics under target/gatling/${class_name}-${timestamp_of_execution}.\nParameterized scenarios with POST request In the previous section, I’ve described the simple scenario with the GET request. In this section I’m going to describe the scenario for the parameterized POST request.\nLet’s first define a service under test and HTTP configuration. As an endpoint I will use another service from Postman.\nprivate val url = \"https://postman-echo.com/post\" private def httpConfBuilder(envUrl: String): HttpProtocolBuilder = { http .baseUrl(envUrl) .acceptHeader(\"application/json\") } I have a CSV file with a column that contains random ID numbers that will be used as a parameter to a test scenario. Gatling has a feeder feature that feeds the test scenario with values from a defined feeder. There are available several built-in feeders, check official documentation for more details.\nTo define a feeder for the CSV file, just use a csv method from Gatling core and provide a filename, located under src/main/resources or src/test/resources:\nval feeder = csv(\"random_strigs.csv\") Given the CSV file has a column header, then we can refer to this header to use values from this column. In the next example, I will use values from a CSV file to insert them into the query parameter map. Each request will be sent with its own value taken from the feeder.\nprivate val sendPostRequest = scenario(\"Send POST request to endpoint\") .feed(feeder) .exec( http(\"POST method\") .post(url) .queryParamMap(Map(\"id\" -\u003e \"${id}\")) .check(status is 200, responseTimeInMillis lte 800)) \"${id}\" in the query map points to the column header in CSV file. That will take a value from the feeder and compose a URL of the following format: /post?id=781f5efc84.\nAs in the previous example, we will check for status code 200 and that the response time will be less than or equal to 800 ms.\nAnd the set up of the scenario will be the same as with the GET method test.\nRun mvn gatling:test command and observe result upon completion.\nRun multiple scenarios within one project It is very often when you have multiple scenarios within the same project and you want them to be executed one-by-one on a CI server. By default, Gatling doesn’t allow more than one setUp method per project. But that is configurable in gatling-maven-plugin.\nAdd the following configuration to the maven plugin:\ntrue Run the mvn gatling:test command. That will execute all tests in the project sorted by alphabetic order.\nConclusion In this blog post, I showed how quickly and easily you can create your first test for a load testing with Gatling.\nAll code examples for this blog post can be found over on GitHub.\n",
+  "wordCount" : "1268",
+  "inLanguage": "en",
+  "datePublished": "2019-03-12T21:18:54+02:00",
+  "dateModified": "2019-03-12T21:18:54+02:00",
+  "author":{
+    "@type": "Person",
+    "name": "Vitali Plagov"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/posts/2019-03-12-load-testing-with-gatling/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Vitali Plagov Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="Vitali Plagov Blog (Alt + H)">Vitali Plagov Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="/posts/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Load Testing With Gatling
+    </h1>
+    <div class="post-meta"><span title='2019-03-12 21:18:54 +0200 +0200'>2019-03-12</span>&nbsp;·&nbsp;Vitali Plagov
+
+</div>
+  </header> 
+  <div class="post-content"><p>In the <a href="/posts/2018-09-13-running-multiple-parallel-requests-with-restassured-and-testng/">previous blog post</a>
+I&rsquo;ve described how to use Dataprovider of TestNG to assert the response time of the REST API endpoint when sending
+multiple parallel requests. In this blog post, I will describe how to do the same with Gatling, which is a more
+suitable tool for such kind of task.</p>
+<h1 id="about-gatling">About Gatling<a hidden class="anchor" aria-hidden="true" href="#about-gatling">#</a></h1>
+<p><a href="https://gatling.io/">Gatling</a> is an open-source tool that allows you to make load testing of web applications. It
+provides a flexible DSL that makes possible to emulate real production user scenarios. For example, consider the
+following scenario: 100 users are sending requests to the service for 3 minutes, then the number of users decreases
+and stays for the next 2 minutes and then again increases for 5 minutes. The load that users put on the service is
+not constant, it is floating. This is a very common scenario, there are peaks and lows. Thus, just throwing a fixed
+number of requests to the service at the same time during a certain period of time - this is not how real production
+scenario looks like.</p>
+<p>Gatling runs on JVM and is written in Scala. But there&rsquo;s no need in Scala programming experience to write tests. The
+DSL that Gatling provides is self-expressive.</p>
+<h1 id="initialize-project-with-gatling-and-maven">Initialize project with Gatling and Maven<a hidden class="anchor" aria-hidden="true" href="#initialize-project-with-gatling-and-maven">#</a></h1>
+<p>Gatling has good integration with build tools like SBT and Maven. Though SBT is a popular choice for Scala, I have
+more experience with Maven and since there&rsquo;s a plugin developed by Gatling developers, I decided to go with the tool
+which I know better.</p>
+<p>Let&rsquo;s create a new Maven project. To add Gatling to the project, add the following dependency:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;dependencies&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;dependency&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;groupId&gt;</span>io.gatling.highcharts<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;artifactId&gt;</span>gatling-charts-highcharts<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;version&gt;</span>3.7.3<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/dependency&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/dependencies&gt;</span>
+</span></span></code></pre></div><p>Since we&rsquo;re using Maven, a <code>gatling-maven-plugin</code> should be added. Put this block inside the <code>build</code> section of
+<code>pom.xml</code> file.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;plugin&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;groupId&gt;</span>io.gatling<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;artifactId&gt;</span>gatling-maven-plugin<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;version&gt;</span>4.1.0<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/plugin&gt;</span>
+</span></span></code></pre></div><p>And the final thing, to be able to run Scala with Maven, add <code>scala-maven-plugin</code> plugin.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;plugin&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;groupId&gt;</span>net.alchim31.maven<span style="color:#f92672">&lt;/groupId&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;artifactId&gt;</span>scala-maven-plugin<span style="color:#f92672">&lt;/artifactId&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;version&gt;</span>4.5.6<span style="color:#f92672">&lt;/version&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;executions&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;execution&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&lt;goals&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;goal&gt;</span>compile<span style="color:#f92672">&lt;/goal&gt;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&lt;goal&gt;</span>testCompile<span style="color:#f92672">&lt;/goal&gt;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">&lt;/goals&gt;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&lt;/execution&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;/executions&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/plugin&gt;</span>
+</span></span></code></pre></div><h1 id="define-service-under-test-and-testing-scenario">Define service under test and testing scenario<a hidden class="anchor" aria-hidden="true" href="#define-service-under-test-and-testing-scenario">#</a></h1>
+<p>Now, when all needed dependencies are set up. Next, we need to define the testing scenario.</p>
+<p>For this demo, I will use one of the endpoints provided by <a href="https://docs.postman-echo.com/">Postman Echo</a> service
+which is a free service that provides HTTP access for testing and demo purposes.</p>
+<p>The scenario that we&rsquo;re going to emulate will be as follows: during the period of 2 minutes, we will send 200
+requests that will be distributed evenly during that period, next we will increase the load to 300 users during one
+minute and finally will finish the scenario with 200 users during one minute. And we will set an assert that the
+response time of each request should be no more than 800 ms and the status code of the response should be equal to
+<code>200 OK</code>.</p>
+<p>This scenario is used just for demo purposes. In a real project, before starting to automate the scenario, analyze
+the potential load that is expected on your service and find out what scenario will suit your case.</p>
+<p>Create a class and make this class to extend the Gatling&rsquo;s <code>Simulation</code> class.
+That is mandatory for all classes that are expected to run the scenario.</p>
+<p>Next, define some constants, like the base URL, query parameters and protocol
+configuration.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> url <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;https://postman-echo.com/get&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> queryParams <span style="color:#66d9ef">=</span> <span style="color:#a6e22e">Map</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;foo1&#34;</span> <span style="color:#f92672">-&gt;</span> <span style="color:#e6db74">&#34;bar1&#34;</span><span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;foo2&#34;</span> <span style="color:#f92672">-&gt;</span> <span style="color:#e6db74">&#34;bar2&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">def</span> httpConfBuilder<span style="color:#f92672">(</span>envUrl<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">HttpProtocolBuilder</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  http
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>baseUrl<span style="color:#f92672">(</span>envUrl<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>acceptHeader<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;application/json&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>After some constants are set up, next define the scenario itself that will
+represent the actual business logic. Define here all the query and path params
+that are accepted by the service, request body and asserts (for response time,
+for example).</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> sendGetRequest <span style="color:#66d9ef">=</span> scenario<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Get date from endpoint&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">.</span>exec<span style="color:#f92672">(</span>http<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;GET method&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>get<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;/&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>queryParamMap<span style="color:#f92672">(</span>queryParams<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>check<span style="color:#f92672">(</span>status is <span style="color:#ae81ff">200</span><span style="color:#f92672">,</span> responseTimeInMillis lte <span style="color:#ae81ff">800</span><span style="color:#f92672">))</span>
+</span></span></code></pre></div><p>In this example, I&rsquo;m sending a GET request to the particular endpoint of the
+service (root in the example below). Define your custom name for the whole
+scenario in <code>scenario</code> method, next, set the name of the particular request in
+<code>exec</code> method and all the configuration of the request. Since the business logic
+of a real project might assume sending different type of requests to different
+endpoints with different asserts, it is possible to chain multiple requests
+inside the one scenario.</p>
+<p>Next, after scenario is defined, the set up should be done. The set up of the
+scenario is the actual logic of how many request should be sent, how much time
+the scenario should be executed, how the user load should be spread during the
+execution. All of that is done using the <code>setUp</code> method.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span>setUp<span style="color:#f92672">(</span>sendGetRequest<span style="color:#f92672">.</span>inject<span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>  rampUsers<span style="color:#f92672">(</span><span style="color:#ae81ff">200</span><span style="color:#f92672">)</span> during<span style="color:#f92672">(</span><span style="color:#ae81ff">2</span> minutes<span style="color:#f92672">),</span>
+</span></span><span style="display:flex;"><span>  rampUsers<span style="color:#f92672">(</span><span style="color:#ae81ff">300</span><span style="color:#f92672">)</span> during <span style="color:#f92672">(</span><span style="color:#ae81ff">2</span> minutes<span style="color:#f92672">),</span>
+</span></span><span style="display:flex;"><span>  rampUsers<span style="color:#f92672">(</span><span style="color:#ae81ff">200</span><span style="color:#f92672">)</span> during<span style="color:#f92672">(</span><span style="color:#ae81ff">1</span> minutes<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">)).</span>protocols<span style="color:#f92672">(</span>httpConfBuilder<span style="color:#f92672">(</span>url<span style="color:#f92672">))</span>
+</span></span></code></pre></div><p>Pass the scenario name as a method argument and define the load logic inside the
+<code>inject</code> method. When finish with defining the load logic, set the HTTP
+configration to be used during the execution.</p>
+<p>That&rsquo;s it with the basic GET request with Gaatling. Run the following command
+to start the scenario execution.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mvn gatling:test
+</span></span></code></pre></div><p>Upon the finish, Gatling will generate the HTML report with statistics and
+graphics under <code>target/gatling/${class_name}-${timestamp_of_execution}</code>.</p>
+<h1 id="parameterized-scenarios-with-post-request">Parameterized scenarios with POST request<a hidden class="anchor" aria-hidden="true" href="#parameterized-scenarios-with-post-request">#</a></h1>
+<p>In the previous section, I&rsquo;ve described the simple scenario with the GET
+request. In this section I&rsquo;m going to describe the scenario for the
+parameterized POST request.</p>
+<p>Let&rsquo;s first define a service under test and HTTP configuration. As an endpoint
+I will use another service from Postman.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> url <span style="color:#66d9ef">=</span> <span style="color:#e6db74">&#34;https://postman-echo.com/post&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">def</span> httpConfBuilder<span style="color:#f92672">(</span>envUrl<span style="color:#66d9ef">:</span> <span style="color:#66d9ef">String</span><span style="color:#f92672">)</span><span style="color:#66d9ef">:</span> <span style="color:#66d9ef">HttpProtocolBuilder</span> <span style="color:#f92672">=</span> <span style="color:#f92672">{</span>
+</span></span><span style="display:flex;"><span>  http
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>baseUrl<span style="color:#f92672">(</span>envUrl<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>acceptHeader<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;application/json&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">}</span>
+</span></span></code></pre></div><p>I have a CSV file with a column that contains random ID numbers that will be
+used as a parameter to a test scenario. Gatling has a <code>feeder</code> feature that
+feeds the test scenario with values from a defined feeder. There are available
+several built-in feeders, check
+<a href="https://gatling.io/docs/3.0/session/feeder/">official documentation</a> for more
+details.</p>
+<p>To define a feeder for the CSV file, just use a <code>csv</code> method from Gatling core
+and provide a filename, located under <code>src/main/resources</code> or
+<code>src/test/resources</code>:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">val</span> feeder <span style="color:#66d9ef">=</span> csv<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;random_strigs.csv&#34;</span><span style="color:#f92672">)</span>
+</span></span></code></pre></div><p>Given the CSV file has a column header, then we can refer to this header to
+use values from this column. In the next example, I will use values from a CSV
+file to insert them into the query parameter map. Each request will be sent
+with its own value taken from the feeder.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-scala" data-lang="scala"><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> sendPostRequest <span style="color:#66d9ef">=</span> scenario<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Send POST request to endpoint&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">.</span>feed<span style="color:#f92672">(</span>feeder<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">.</span>exec<span style="color:#f92672">(</span>
+</span></span><span style="display:flex;"><span>    http<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;POST method&#34;</span><span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">.</span>post<span style="color:#f92672">(</span>url<span style="color:#f92672">)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">.</span>queryParamMap<span style="color:#f92672">(</span><span style="color:#a6e22e">Map</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;id&#34;</span> <span style="color:#f92672">-&gt;</span> <span style="color:#e6db74">&#34;${id}&#34;</span><span style="color:#f92672">))</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">.</span>check<span style="color:#f92672">(</span>status is <span style="color:#ae81ff">200</span><span style="color:#f92672">,</span> responseTimeInMillis lte <span style="color:#ae81ff">800</span><span style="color:#f92672">))</span>
+</span></span></code></pre></div><p><code>&quot;${id}&quot;</code> in the query map points to the column header in CSV file. That will
+take a value from the feeder and compose a URL of the following format:
+<code>/post?id=781f5efc84</code>.</p>
+<p>As in the previous example, we will check for status code 200 and that the
+response time will be less than or equal to 800 ms.</p>
+<p>And the set up of the scenario will be the same as with the GET method test.</p>
+<p>Run <code>mvn gatling:test</code> command and observe result upon completion.</p>
+<h1 id="run-multiple-scenarios-within-one-project">Run multiple scenarios within one project<a hidden class="anchor" aria-hidden="true" href="#run-multiple-scenarios-within-one-project">#</a></h1>
+<p>It is very often when you have multiple scenarios within the same project and
+you want them to be executed one-by-one on a CI server. By default, Gatling
+doesn&rsquo;t allow more than one <code>setUp</code> method per project. But that is configurable
+in <code>gatling-maven-plugin</code>.</p>
+<p>Add the following configuration to the maven plugin:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-xml" data-lang="xml"><span style="display:flex;"><span><span style="color:#f92672">&lt;configuration&gt;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">&lt;runMultipleSimulations&gt;</span>true<span style="color:#f92672">&lt;/runMultipleSimulations&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">&lt;/configuration&gt;</span>
+</span></span></code></pre></div><p>Run the <code>mvn gatling:test</code> command. That will execute all tests in the
+project sorted by alphabetic order.</p>
+<h1 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h1>
+<p>In this blog post, I showed how quickly and easily you can create your first
+test for a load testing with Gatling.</p>
+<p>All code examples for this blog post can be found over on
+<a href="https://github.com/plagov/gatling-blogpost-demo">GitHub</a>.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="/">Vitali Plagov Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>
