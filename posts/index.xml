@@ -4,10 +4,18 @@
     <title>Posts on Vitali Plagov Blog</title>
     <link>/posts/</link>
     <description>Recent content in Posts on Vitali Plagov Blog</description>
-    <generator>Hugo -- 0.135.0</generator>
+    <generator>Hugo -- 0.139.3</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 01 Dec 2021 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 30 Nov 2024 00:00:00 +0000</lastBuildDate>
     <atom:link href="/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to configure Renovate for multiple repositories On Azure DevOps</title>
+      <link>/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/</link>
+      <pubDate>Sat, 30 Nov 2024 00:00:00 +0000</pubDate>
+      <guid>/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/</guid>
+      <description>&lt;p&gt;I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to
+configure Renovate for multiple repositories on Azure DevOps platform.&lt;/p&gt;</description>
+    </item>
     <item>
       <title>How I learned about the rule engine pattern with Java</title>
       <link>/posts/2021-12-01-rule-engine-pattern/</link>

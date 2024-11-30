@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>How to configure Renovate for multiple repositories On Azure DevOps | Vitali Plagov Blog</title>
+<meta name="keywords" content="continuous-integration">
+<meta name="description" content="I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to
+configure Renovate for multiple repositories on Azure DevOps platform.">
+<meta name="author" content="Vitali Plagov">
+<link rel="canonical" href="/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.d6fcd20a4fb86efa4dfac8ec95da60244cc8871042183da1ef28e3a762ad79c8.css" integrity="sha256-1vzSCk&#43;4bvpN&#43;sjsldpgJEzIhxBCGD2h7yjjp2Ktecg=" rel="preload stylesheet" as="style">
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="mask-icon" href="/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:url" content="/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/">
+  <meta property="og:site_name" content="Vitali Plagov Blog">
+  <meta property="og:title" content="How to configure Renovate for multiple repositories On Azure DevOps">
+  <meta property="og:description" content="I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to configure Renovate for multiple repositories on Azure DevOps platform.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-11-30T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-11-30T00:00:00+00:00">
+    <meta property="article:tag" content="Continuous-Integration">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="How to configure Renovate for multiple repositories On Azure DevOps">
+<meta name="twitter:description" content="I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to
+configure Renovate for multiple repositories on Azure DevOps platform.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "/posts/"
+    }
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "How to configure Renovate for multiple repositories On Azure DevOps",
+      "item": "/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "How to configure Renovate for multiple repositories On Azure DevOps",
+  "name": "How to configure Renovate for multiple repositories On Azure DevOps",
+  "description": "I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to configure Renovate for multiple repositories on Azure DevOps platform.\n",
+  "keywords": [
+    "continuous-integration"
+  ],
+  "articleBody": "I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to configure Renovate for multiple repositories on Azure DevOps platform.\nWhy using Renovate It’s typical for a product team in the organization to be responsible for and to maintain several projects. Be it a microservice with Java and Spring Boot or ASP.NET Core, each projects contains not only Maven or NuGet dependencies, but also other dependencies. Like Docker images, GitHub Actions or Azure Pipelines tasks. Keeping them all up to date even for a single project is a time-consuming task. The one should periodically allocate time and check new versions of used dependencies, update them manually, raise a Pull Request. The more project a team has, the more this task becomes boring.\nRenovate can save a lot of time and effort. Once added to the project and set a schedule to run, it will make all the above automatically.\nThe Renovate has several options to run. I will describe how I have configured the self-hosted version to run on Azure Pipelines against several ASP.NET Core repositories.\nA single configuration for several repositories All the configurations for the Renovate can be placed in the config.js file. Configurations defined in this file are applied to all projects that Renovate is set to maintain. A second place Renovate settings can be extended is the renovate.json file and that file is set individually per repository, while the config.js is placed in a single instance.\nLet’s start now in setting it up.\nFirst, you need to create a new repository within your project on Azure DevOps. Create the config.js file. Below is the configuration that I have used for my project.\nmodule.exports = { extends: [ ':automergeAll', 'group:monorepos' ], packageRules: [ { groupName: \"Microsoft AspNetCore packages\", matchPackagePatterns: [\"^Microsoft\\.AspNetCore\\.\"], groupSlug: \"aspnetcore\" } ], platform: \"azure\", endpoint: \"https://dev.azure.com/acme/\", token: process.env.TOKEN, hostRules: [ { hostType: 'nuget', matchHost: 'pkgs.dev.azure.com', username: 'apikey', password: process.env.RENOVATE_TOKEN, } ], regexManagers: [ { fileMatch: [\"docker-compose.*\\\\.ya?ml$\"], matchStrings: [\"image: acme\\\\.azurecr\\\\.io/docker/(library/)?(?.*?):(?.*?)\\n\"], datasourceTemplate: \"docker\" } ], repositories: [ 'acme-project/acme-repository ], baseBranches: [\"main\"], rebaseWhen: 'behind-base-branch' }; Explaining the config.js configuration Let’s go through the configuration file step by step to explain what it does. The configuration starts with the extends block, which is meant to list all the built-in presets that the Renovate bot has. For the full list of presets, please refer to the Renovate documentation to find presets suitable for your project. Two presets that we have found useful for different teams in our organisation are :automergeAll'. This marks the pull request in Azure Repos to be automatically merged once all the required checks have been passed. And the second is group:monorepos, which merges all package updates coming from the same mono repository into a single PR. This will firstly limit the number of PRs raised, and secondly avoid the failed builds scenario when two packages from the same monorepo are dependent on each other, but are updated separately.\nThe next block is packageRules. This allows you to group packages by name. So all package updates that match the pattern will be grouped and updated at once. Such package grouping helped us to solve the following problem. Our projects run on .NET 8, which is an LTS version. There have been a lot of updates to Micrososft.AspNetCore.*, Microsoft.Extensions.*, etc. packages. Some of them were compatible with .NET 8, others required .NET 9. The AspNetCore packages were the ones that required .NET 9. But all these Microsoft.* packages were in a single PR making it impossible to merge them. However, we didn’t want to ignore those updates that were compatible with .NET 8. I identified packages that required .NET 9 and put them into a separate group. That way, if a new PR came out with update, I could reject it and accept others separately.\nThe next block hostRules along with some fields are a common configuration for the bot to set the platform it will use to look for updates. Also, the Private Access Token (PAT) to use.\nThe regexManagers block is another customisation for the configuration of the bot. In our organisation, we have a private docker image registry that we use to cache the docker images that we first pull from the public registries. Because our private registry doesn’t store newly released tags, we have to fetch updates from Docker Hub and other public registries. So, we need to parse the docker-compose file or dockerfiles to get the docker image name and tag.\nSo, the fileMatch field sets the regex for the filename to look for. The matchStrings field is a regex pattern to find within the file. A very important thing here is to put the package name in the depName regex group and the current package version in the currentValue group. The datasourceTemplate is an instruction to Renovate telling it which package manager to use. It will take values from the regex groups above and will look for updates against the specified package manager.\nThe last important block is the repositories list, which contains all the projects that Renovate will scan and maintain. In Azure Repos, these should be defined in the format project-name/repository-name.\nAzure Pipeline to run the Renovate bot Now, when the configuration of the Renovate is ready, we need to set up the pipeline for the bot to run. Below is a very simple pipeline what I used in our project.\ntrigger: - none schedules: - cron: \"0 8 * * 1-5\" displayName: Weekdays 08:00 UTC runs branches: include: - main always: true pool: name: ubuntu-latest steps: - checkout: self - checkout: git://acme-project/acme-repository-one - checkout: git://acme-project/acme-repository-two - task: npmAuthenticate@0 inputs: workingFile: renovate/.npmrc - bash: | git config --global user.email 'bot@renovateapp.com' git config --global user.name 'Renovate Bot' npx --userconfig renovate/.npmrc renovate env: RENOVATE_CONFIG_FILE: renovate/config.js RENOVATE_PLATFORM: azure RENOVATE_ENDPOINT: $(System.CollectionUri) RENOVATE_TOKEN: $(System.AccessToken) GITHUB_COM_TOKEN: $(GITHUB_TOKEN) LOG_LEVEL: debug The pipeline is very trivial with the only two things I would like to highlight and describe.\nThe very first step of the pipeline is to checkout the renovate configuration repo and all the repositories the bot will run against. All of them should be listed in the following format: - checkout: git://{project-name}/{repository-name}.\nNext, is the GITHUB_COM_TOKEN environment variable. When submitting a PR with package updates, Renovate can provide release notes for the updates. Those notes are fetched from GitHub is the source code of the packages is hosted on GitHub and if the source code repository provides release notes. Although, release notes are publicly available, the GitHub doesn’t allow unauthorized API calls to its platform. Hence, the need to provide the token. You can ignore this if you don’t have an option to generate a token. But the bot will show a minor warning in the PR that it was unable to fetch release notes. Or you can completely disable the release notes fetching through the configuration property.\nConclusion I was very glad I was able to introduce the Renovate bot to our project. It has integrated well into our team automating the process of keeping our dependencies, both private and public, up to date. I highly recommend it for any development team.\n",
+  "wordCount" : "1188",
+  "inLanguage": "en",
+  "datePublished": "2024-11-30T00:00:00Z",
+  "dateModified": "2024-11-30T00:00:00Z",
+  "author":{
+    "@type": "Person",
+    "name": "Vitali Plagov"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Vitali Plagov Blog",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="/" accesskey="h" title="Vitali Plagov Blog (Alt + H)">Vitali Plagov Blog</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="/about/" title="About">
+                    <span>About</span>
+                </a>
+            </li>
+            <li>
+                <a href="/posts/" title="Archive">
+                    <span>Archive</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      How to configure Renovate for multiple repositories On Azure DevOps
+    </h1>
+    <div class="post-meta"><span title='2024-11-30 00:00:00 +0000 UTC'>2024-11-30</span>&nbsp;·&nbsp;Vitali Plagov
+
+</div>
+  </header> 
+  <div class="post-content"><p>I had an opportunity to integrate the Renovate bot into our project. I would like to share my experience on how to
+configure Renovate for multiple repositories on Azure DevOps platform.</p>
+<h2 id="why-using-renovate">Why using Renovate<a hidden class="anchor" aria-hidden="true" href="#why-using-renovate">#</a></h2>
+<p>It&rsquo;s typical for a product team in the organization to be responsible for and to maintain several projects. Be it a
+microservice with Java and Spring Boot or ASP.NET Core, each projects contains not only Maven or NuGet dependencies,
+but also other dependencies. Like Docker images, GitHub Actions or Azure Pipelines tasks. Keeping them all up to date
+even for a single project is a time-consuming task. The one should periodically allocate time and check new versions of
+used dependencies, update them manually, raise a Pull Request. The more project a team has, the more this task becomes
+boring.</p>
+<p>Renovate can save a lot of time and effort. Once added to the project and set a schedule to run, it will make all the
+above automatically.</p>
+<p>The Renovate has several options to run. I will describe how I have configured the self-hosted version to run on
+Azure Pipelines against several ASP.NET Core repositories.</p>
+<h2 id="a-single-configuration-for-several-repositories">A single configuration for several repositories<a hidden class="anchor" aria-hidden="true" href="#a-single-configuration-for-several-repositories">#</a></h2>
+<p>All the configurations for the Renovate can be placed in the <code>config.js</code> file. Configurations defined in this file are
+applied to all projects that Renovate is set to maintain. A second place Renovate settings can be extended is the
+<code>renovate.json</code> file and that file is set individually per repository, while the <code>config.js</code> is placed in a single
+instance.</p>
+<p>Let&rsquo;s start now in setting it up.</p>
+<p>First, you need to create a new repository within your project on Azure DevOps. Create the <code>config.js</code> file. Below is
+the configuration that I have used for my project.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-javascript" data-lang="javascript"><span style="display:flex;"><span><span style="color:#a6e22e">module</span>.<span style="color:#a6e22e">exports</span> <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">extends</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;:automergeAll&#39;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;group:monorepos&#39;</span>
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">packageRules</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">groupName</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Microsoft AspNetCore packages&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">matchPackagePatterns</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;^Microsoft\.AspNetCore\.&#34;</span>],
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">groupSlug</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;aspnetcore&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">platform</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;azure&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">endpoint</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;https://dev.azure.com/acme/&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">token</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">process</span>.<span style="color:#a6e22e">env</span>.<span style="color:#a6e22e">TOKEN</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">hostRules</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">hostType</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;nuget&#39;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">matchHost</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;pkgs.dev.azure.com&#39;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">username</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#39;apikey&#39;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">password</span><span style="color:#f92672">:</span> <span style="color:#a6e22e">process</span>.<span style="color:#a6e22e">env</span>.<span style="color:#a6e22e">RENOVATE_TOKEN</span>,
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">regexManagers</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">fileMatch</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;docker-compose.*\\.ya?ml$&#34;</span>],
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">matchStrings</span><span style="color:#f92672">:</span> [<span style="color:#e6db74">&#34;image: acme\\.azurecr\\.io/docker/(library/)?(?&lt;depName&gt;.*?):(?&lt;currentValue&gt;.*?)\n&#34;</span>],
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">datasourceTemplate</span><span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;docker&#34;</span>
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    ],
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">repositories</span><span style="color:#f92672">:</span> [
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#39;acme-project/acme-repository
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    ],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    baseBranches: [&#34;main&#34;],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    rebaseWhen: &#39;</span><span style="color:#a6e22e">behind</span><span style="color:#f92672">-</span><span style="color:#a6e22e">base</span><span style="color:#f92672">-</span><span style="color:#a6e22e">branch</span><span style="color:#960050;background-color:#1e0010">&#39;</span>
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><h3 id="explaining-the-configjs-configuration">Explaining the <code>config.js</code> configuration<a hidden class="anchor" aria-hidden="true" href="#explaining-the-configjs-configuration">#</a></h3>
+<p>Let&rsquo;s go through the configuration file step by step to explain what it does.
+The configuration starts with the <code>extends</code> block, which is meant to list all the built-in presets that the Renovate bot has.
+For the full list of presets, please refer to the <a href="https://docs.renovatebot.com/presets-default/">Renovate documentation</a>
+to find presets suitable for your project. Two presets that we have found useful for different teams in our organisation are
+<code>:automergeAll'</code>. This marks the pull request in Azure Repos to be automatically merged once all the required checks
+have been passed. And the second is <code>group:monorepos</code>, which merges all package updates coming from the same mono
+repository into a single PR. This will firstly limit the number of PRs raised, and secondly avoid the failed builds
+scenario when two packages from the same monorepo are dependent on each other, but are updated separately.</p>
+<p>The next block is <code>packageRules</code>. This allows you to group packages by name. So all package updates
+that match the pattern will be grouped and updated at once. Such package grouping helped us to solve the following problem.
+Our projects run on .NET 8, which is an LTS version. There have been a lot of updates to <code>Micrososft.AspNetCore.*</code>,
+<code>Microsoft.Extensions.*</code>, etc. packages. Some of them were compatible with .NET 8, others required .NET 9.
+The <code>AspNetCore</code> packages were the ones that required .NET 9. But all these <code>Microsoft.*</code> packages were in a single PR
+making it impossible to merge them. However, we didn&rsquo;t want to ignore those updates that were compatible with .NET 8.
+I identified packages that required .NET 9 and put them into a separate group. That way, if a new PR came out with
+update, I could reject it and accept others separately.</p>
+<p>The next block <code>hostRules</code> along with some fields are a common configuration for the bot to set the platform it will
+use to look for updates. Also, the Private Access Token (PAT) to use.</p>
+<p>The <code>regexManagers</code> block is another customisation for the configuration of the bot. In our organisation, we have a private
+docker image registry that we use to cache the docker images that we first pull from the public registries. Because our
+private registry doesn&rsquo;t store newly released tags, we have to fetch updates from Docker Hub and other public registries.
+So, we need to parse the docker-compose file or dockerfiles to get the docker image name and tag.</p>
+<p>So, the <code>fileMatch</code> field sets the regex for the filename to look for.
+The <code>matchStrings</code> field is a regex pattern to find within the file. A very important thing here is to put the package
+name in the <code>depName</code> regex group and the current package version in the <code>currentValue</code> group.
+The <code>datasourceTemplate</code> is an instruction to Renovate telling it which package manager to use. It will take values from the
+regex groups above and will look for updates against the specified package manager.</p>
+<p>The last important block is the <code>repositories</code> list, which contains all the projects that Renovate will scan and maintain.
+In Azure Repos, these should be defined in the format <code>project-name/repository-name</code>.</p>
+<h2 id="azure-pipeline-to-run-the-renovate-bot">Azure Pipeline to run the Renovate bot<a hidden class="anchor" aria-hidden="true" href="#azure-pipeline-to-run-the-renovate-bot">#</a></h2>
+<p>Now, when the configuration of the Renovate is ready, we need to set up the pipeline for the bot to run.
+Below is a very simple pipeline what I used in our project.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">trigger</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#ae81ff">none</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">schedules</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">cron</span>: <span style="color:#e6db74">&#34;0 8 * * 1-5&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">displayName</span>: <span style="color:#ae81ff">Weekdays 08:00 UTC runs</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">branches</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">include</span>:
+</span></span><span style="display:flex;"><span>        - <span style="color:#ae81ff">main</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">always</span>: <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">pool</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ubuntu-latest</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">steps</span>:
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">checkout</span>: <span style="color:#ae81ff">self</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">checkout</span>: <span style="color:#ae81ff">git://acme-project/acme-repository-one</span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">checkout</span>: <span style="color:#ae81ff">git://acme-project/acme-repository-two</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">task</span>: <span style="color:#ae81ff">npmAuthenticate@0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">inputs</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">workingFile</span>: <span style="color:#ae81ff">renovate/.npmrc</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  - <span style="color:#f92672">bash</span>: |<span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      git config --global user.email &#39;bot@renovateapp.com&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      git config --global user.name &#39;Renovate Bot&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      npx --userconfig renovate/.npmrc renovate</span>      
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">RENOVATE_CONFIG_FILE</span>: <span style="color:#ae81ff">renovate/config.js</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">RENOVATE_PLATFORM</span>: <span style="color:#ae81ff">azure</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">RENOVATE_ENDPOINT</span>: <span style="color:#ae81ff">$(System.CollectionUri)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">RENOVATE_TOKEN</span>: <span style="color:#ae81ff">$(System.AccessToken)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">GITHUB_COM_TOKEN</span>: <span style="color:#ae81ff">$(GITHUB_TOKEN)</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">LOG_LEVEL</span>: <span style="color:#ae81ff">debug</span>
+</span></span></code></pre></div><p>The pipeline is very trivial with the only two things I would like to highlight and describe.</p>
+<p>The very first step of the pipeline is to checkout the renovate configuration repo and all the repositories the bot will
+run against. All of them should be listed in the following format: <code>- checkout: git://{project-name}/{repository-name}</code>.</p>
+<p>Next, is the <code>GITHUB_COM_TOKEN</code> environment variable. When submitting a PR with package updates, Renovate can
+provide release notes for the updates. Those notes are fetched from GitHub is the source code of the packages is hosted
+on GitHub and if the source code repository provides release notes. Although, release notes are publicly available, the
+GitHub doesn&rsquo;t allow unauthorized API calls to its platform. Hence, the need to provide the token.
+You can ignore this if you don&rsquo;t have an option to generate a token. But the bot will show a minor warning in the PR
+that it was unable to fetch release notes. Or you can completely disable the release notes fetching through the
+configuration property.</p>
+<h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>I was very glad I was able to introduce the Renovate bot to our project. It has integrated well into our team automating
+the process of keeping our dependencies, both private and public, up to date. I highly recommend it for any development
+team.</p>
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="/tags/continuous-integration/">Continuous-Integration</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2024 <a href="/">Vitali Plagov Blog</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

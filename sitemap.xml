@@ -2,6 +2,21 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>/tags/continuous-integration/</loc>
+    <lastmod>2024-11-30T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/posts/2024-11-30-renovate-for-multiple-repositories-on-azure-devops/</loc>
+    <lastmod>2024-11-30T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/posts/</loc>
+    <lastmod>2024-11-30T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/tags/</loc>
+    <lastmod>2024-11-30T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/</loc>
+    <lastmod>2024-11-30T00:00:00+00:00</lastmod>
+  </url><url>
     <loc>/tags/design-patterns/</loc>
     <lastmod>2021-12-01T00:00:00+00:00</lastmod>
   </url><url>
@@ -9,15 +24,6 @@
     <lastmod>2021-12-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/java/</loc>
-    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/posts/</loc>
-    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/tags/</loc>
-    <lastmod>2021-12-01T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/</loc>
     <lastmod>2021-12-01T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/posts/2021-09-20-project-euler-solving-problem-9-pythagorean-triplet/</loc>
